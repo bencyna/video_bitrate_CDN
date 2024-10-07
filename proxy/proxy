@@ -23,8 +23,8 @@ if __name__ == "__main__":
     # while client is connected, listen for a message from the client
     clientSocket, client_address = proxySocket.accept()
     print("Accepted client")
-
-    # bind to a sever
+    
+    # bind to a server
     serverSocket = socket(AF_INET, SOCK_STREAM)
     serverSocket.bind((fake_ip, 0))
     
@@ -33,20 +33,35 @@ if __name__ == "__main__":
     print("connected to server")
 
     while True:
-        data = clientSocket.recv(2048)
-        if not data:
-            break
-
-        # send data to server
-        serverSocket.sendall(data)
-        
-        response = serverSocket.recv(4096)
-        if not response:
-            break
+        message = []
+        EOM = False
+        while not EOM:
+            data = clientSocket.recv(2048).decode()
+            message.append(data)
+            if "\\n" in data:
+                EOM = True
           
-        # send the response back to the client
-        clientSocket.sendall(response)
-
+        # EOM
+        # send data to server
+        data_to_send = "".join(message).encode()
+        print("message from client = ", "".join(message))
+        serverSocket.sendall(data_to_send)
+        
+        response_message = []
+        EOM = False
+        while not EOM:
+            response = serverSocket.recv(2048).decode()
+            response_message.append(response)
+            if "\\n" in response:
+                EOM = True
+            
+        # EOM
+        # send response back to client
+        response_to_send = "".join(response_message).encode()
+        
+        clientSocket.sendall(response_to_send)
+    
     # once broken close the connection
+    print("connection closed")
     clientSocket.close()
     serverSocket.close()
