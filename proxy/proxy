@@ -9,32 +9,44 @@ if __name__ == "__main__":
         print("Usage: python3", sys.argv[0], "<listen_port>, <fake_ip> <servier_ip>")
         sys.exit()
         
-    listen_port = str(sys.argv[1])    
+    listen_port = int(sys.argv[1])    
     fake_ip = str(sys.argv[2])    
     server_ip = str(sys.argv[3])    
     print("Listen Port:", listen_port, "Fake IP:", fake_ip, "Server IP:", server_ip)
 
+    proxySocket = socket(AF_INET, SOCK_STREAM)
 
-serverSocket = socket(AF_INET, SOCK_STREAM)
+    # listen for a client to connect 
+    proxySocket.bind(("", listen_port))
+    
+    proxySocket.listen(5)
+    # while client is connected, listen for a message from the client
+    clientSocket, client_address = proxySocket.accept()
+    print("Accepted client")
 
-serverSocket.bind(('' , 8080))
+    # bind to a sever
+    serverSocket = socket(AF_INET, SOCK_STREAM)
+    serverSocket.bind((fake_ip, 0))
+    
+    # connect to the server
+    serverSocket.connect((server_ip, 8080))
+    print("connected to server")
 
-serverSocket.listen(1)
+    while True:
+        data = clientSocket.recv(2048)
+        if not data:
+            break
 
-connectionSocket, addr = serverSocket.accept()
+        # send data to server
+        serverSocket.sendall(data)
+        
+        response = serverSocket.recv(4096)
+        if not response:
+            break
+          
+        # send the response back to the client
+        clientSocket.sendall(response)
 
-# Recieving message from client
-clientMessage = connectionSocket.recv(2048)
-
-print("Received Message from Client: ", clientMessage.decode())
-
-# Modifying the message
-clientMessage = clientMessage.decode().upper()
-
-print("Sending Message to Client: ", clientMessage)
-
-# Sending the encoded modified message back to the client
-connectionSocket.send(clientMessage.encode())
-
-connectionSocket.close()
-serverSocket.close()
+    # once broken close the connection
+    clientSocket.close()
+    serverSocket.close()
