@@ -2,6 +2,14 @@
 from socket import *
 import sys
 
+def isSocketConnected(socket):
+    try:
+        # if the socket is connected, then the recv will not throw an exception
+        socket.recv(1)
+        return True
+    except:
+        return False
+
 def closeConnections():
     clientSocket.close()
     serverSocket.close()
@@ -24,15 +32,32 @@ def receiveMessage(socket):
             
 def runProxy(clientSocket, serverSocket):
     while True:
+        if not isSocketConnected(clientSocket):
+            return 
+          
         client_message = receiveMessage(clientSocket)
-        
         sendMessage(client_message, serverSocket)
         
+        if not isSocketConnected(serverSocket):
+            return
+          
         server_message = receiveMessage(serverSocket)
-
         sendMessage(server_message, clientSocket)
 
-
+def connectToClient(proxySocket, fake_ip, server_ip):
+    # while client is connected, listen for a message from the client
+    clientSocket, client_address = proxySocket.accept()
+    print("Accepted client")
+    
+    # bind to a server
+    serverSocket = socket(AF_INET, SOCK_STREAM)
+    serverSocket.bind((fake_ip, 0))
+    
+    # connect to the server
+    serverSocket.connect((server_ip, 8080))
+    print("Connected to server")
+    
+    return clientSocket, serverSocket
 # Access command line arguments using sys.argv
 if __name__ == "__main__":
     if len(sys.argv) != 4:
@@ -50,19 +75,10 @@ if __name__ == "__main__":
     proxySocket.bind(("", listen_port))
     
     proxySocket.listen(5)
-    # while client is connected, listen for a message from the client
-    clientSocket, client_address = proxySocket.accept()
-    print("Accepted client")
     
-    # bind to a server
-    serverSocket = socket(AF_INET, SOCK_STREAM)
-    serverSocket.bind((fake_ip, 0))
-    
-    # connect to the server
-    serverSocket.connect((server_ip, 8080))
-    print("Connected to server")
-
-    # connectoion created for each
-    runProxy(clientSocket, serverSocket)
-
-    closeConnections()
+    while True:
+        clientSocket, serverSocket = connectToClient(proxySocket, fake_ip, server_ip)
+        # once connection is made run the interaction.
+        runProxy(clientSocket, serverSocket)
+        # close the connections
+        closeConnections()
