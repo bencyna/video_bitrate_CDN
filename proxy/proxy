@@ -2,6 +2,36 @@
 from socket import *
 import sys
 
+def closeConnections():
+    clientSocket.close()
+    serverSocket.close()
+    
+def sendMessage(message, socket):
+    data_to_send = "".join(message).encode()
+    print("message: ", "".join(message))
+    socket.sendall(data_to_send)    
+
+def receiveMessage(socket):  
+    message = []
+    EOM = False
+    while not EOM:
+        data = socket.recv(2048).decode()
+        message.append(data)
+        if "\\n" in data:
+            EOM = True
+    
+    return message
+            
+def runProxy(clientSocket, serverSocket):
+    while True:
+        client_message = receiveMessage(clientSocket)
+        
+        sendMessage(client_message, serverSocket)
+        
+        server_message = receiveMessage(serverSocket)
+
+        sendMessage(server_message, clientSocket)
+
 
 # Access command line arguments using sys.argv
 if __name__ == "__main__":
@@ -30,38 +60,9 @@ if __name__ == "__main__":
     
     # connect to the server
     serverSocket.connect((server_ip, 8080))
-    print("connected to server")
+    print("Connected to server")
 
-    while True:
-        message = []
-        EOM = False
-        while not EOM:
-            data = clientSocket.recv(2048).decode()
-            message.append(data)
-            if "\\n" in data:
-                EOM = True
-          
-        # EOM
-        # send data to server
-        data_to_send = "".join(message).encode()
-        print("message from client = ", "".join(message))
-        serverSocket.sendall(data_to_send)
-        
-        response_message = []
-        EOM = False
-        while not EOM:
-            response = serverSocket.recv(2048).decode()
-            response_message.append(response)
-            if "\\n" in response:
-                EOM = True
-            
-        # EOM
-        # send response back to client
-        response_to_send = "".join(response_message).encode()
-        
-        clientSocket.sendall(response_to_send)
-    
-    # once broken close the connection
-    print("connection closed")
-    clientSocket.close()
-    serverSocket.close()
+    # connectoion created for each
+    runProxy(clientSocket, serverSocket)
+
+    closeConnections()
