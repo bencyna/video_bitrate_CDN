@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 from socket import *
 import sys
+import select
 
-def isSocketConnected(socket):
-    try:
-        # if the socket is connected, then the recv will not throw an exception
-        socket.recv(1)
-        return True
-    except:
+def isSocketClosed(message):
+    for msg in message:
+        if "exit()" in msg:
+            return True
+          
         return False
 
-def closeConnections():
+def closeConnections(clienrtSocket, serverSocket):
     clientSocket.close()
     serverSocket.close()
+    print("Closed connections")
     
 def sendMessage(message, socket):
     data_to_send = "".join(message).encode()
@@ -32,17 +33,16 @@ def receiveMessage(socket):
             
 def runProxy(clientSocket, serverSocket):
     while True:
-        if not isSocketConnected(clientSocket):
-            return 
-          
         client_message = receiveMessage(clientSocket)
+        if isSocketClosed(client_message):
+            break
         sendMessage(client_message, serverSocket)
         
-        if not isSocketConnected(serverSocket):
-            return
-          
         server_message = receiveMessage(serverSocket)
         sendMessage(server_message, clientSocket)
+        
+        if isSocketClosed(server_message):
+            break
 
 def connectToClient(proxySocket, fake_ip, server_ip):
     # while client is connected, listen for a message from the client
@@ -81,4 +81,4 @@ if __name__ == "__main__":
         # once connection is made run the interaction.
         runProxy(clientSocket, serverSocket)
         # close the connections
-        closeConnections()
+        closeConnections(clientSocket, serverSocket)
