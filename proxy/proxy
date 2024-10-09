@@ -24,7 +24,7 @@ def receiveMessage(socket):
     message = []
     EOM = False
     while not EOM:
-        data = socket.recv(20).decode()
+        data = socket.recv(2048).decode()
         message.append(data)
         if "\n" in data:
             EOM = True
