@@ -24,9 +24,9 @@ def receiveMessage(socket):
     message = []
     EOM = False
     while not EOM:
-        data = socket.recv(2048).decode()
+        data = socket.recv(20).decode()
         message.append(data)
-        if "\\n" in data:
+        if "\n" in data:
             EOM = True
     
     return message
@@ -34,6 +34,7 @@ def receiveMessage(socket):
 def runProxy(clientSocket, serverSocket):
     while True:
         client_message = receiveMessage(clientSocket)
+        print("here is the whole client message: ", client_message)
         if isSocketClosed(client_message):
             break
         sendMessage(client_message, serverSocket)
