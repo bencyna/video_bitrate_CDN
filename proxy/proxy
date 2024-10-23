@@ -4,21 +4,41 @@ import threading
 from socket import *
 import sys
 
-def handle_client(client_socket):
+def connectToClient(proxySocket, fake_ip, server_ip):
+    # while client is connected, listen for a message from the client
+    clientSocket, client_address = proxySocket.accept()
+    print("Accepted client")
+    
+    # bind to a server
+    serverSocket = socket(AF_INET, SOCK_STREAM)
+    serverSocket.bind((fake_ip, 0))
+    
+    # connect to the server
+    serverSocket.connect((server_ip, 80))
+    print("Connected to server")
+    
+    return clientSocket, serverSocket
+
+def handle_client(client_socket, log_file, proxy_socket, fake_ip):
+    # write to log file
+    f = open(log_file, "a")
+    f.write("Client opened connection\n")
     # establish connection to recieve messages from the client
+    clientSocket, serverSocket = connectToClient(proxySocket, fake_ip, server_ip)
     
-    # establish connection to receive messages from the server
     
-    # send messages to the server
+    # establish connection to the server
+    
+    # receive message from the client, forwarded to server
     
     # receive messages from server 
-    # log the messages 
+    # log the messages in format <time> <duration> <server-ip> <chunkname> <chunk-size>
     
     # send messages to the client
     
     # repeat 
     
-    # if the client closes the connection, close the connection and return 
+    # if the client closes the connection, close the connection, close the file and return
     pass
 
 if __name__ == "__main__":
@@ -46,6 +66,6 @@ if __name__ == "__main__":
         client_socket, client_address = proxySocket.accept()
         print(f"Connection from {client_address}")
         # Spin up a new thread to handle the client
-        threading.Thread(target=handle_client, args=(client_socket,)).start()
+        threading.Thread(target=handle_client, args=(client_socket,log_file, fake_ip)).start()
         
         # Make sure to test for eveyrthing from project 1
