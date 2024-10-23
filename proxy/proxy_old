@@ -10,7 +10,7 @@ def isSocketClosed(message):
           
         return False
 
-def closeConnections(clienrtSocket, serverSocket):
+def closeConnections(clientSocket, serverSocket):
     clientSocket.close()
     serverSocket.close()
     print("Closed connections")

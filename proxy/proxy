@@ -3,12 +3,42 @@ import threading
 
 from socket import *
 import sys
-
-def connectToClient(proxySocket, fake_ip, server_ip):
-    # while client is connected, listen for a message from the client
-    clientSocket, client_address = proxySocket.accept()
-    print("Accepted client")
+def closeConnections(clientSocket, serverSocket):
+    clientSocket.close()
+    serverSocket.close()
+    print("Closed connections")
     
+def sendMessage(message, socket):
+    data_to_send = "".join(message).encode()
+    print("message: ", "".join(message))
+    socket.sendall(data_to_send) 
+
+def receiveMessage(socket):  
+    headers = []
+    buffer = ""
+    while True:
+        data = client_socket.recv(1024).decode('utf-8')
+        print(data)
+        buffer += data
+        if "\r\n\r\n" in buffer:
+            break
+
+    # Separate headers from the rest of the message
+    headers_data, body = buffer.split("\r\n\r\n", 1)
+
+    # Split headers into individual lines
+    headers = headers_data.split("\r\n")
+    
+    # Print out the request line and headers
+    print("Request Line:", headers[0])  
+    print("Headers:")
+    for header in headers[1:]:  # Iterate over the remaining lines (the headers)
+        key, value = header.split(":", 1)
+        print(f"{key.strip()}: {value.strip()}")  # Strip to clean up whitespace
+    
+    return headers, body
+
+def connectToServer(fake_ip, server_ip):
     # bind to a server
     serverSocket = socket(AF_INET, SOCK_STREAM)
     serverSocket.bind((fake_ip, 0))
@@ -17,30 +47,42 @@ def connectToClient(proxySocket, fake_ip, server_ip):
     serverSocket.connect((server_ip, 80))
     print("Connected to server")
     
-    return clientSocket, serverSocket
+    return serverSocket
 
-def handle_client(client_socket, log_file, proxy_socket, fake_ip):
-    # write to log file
-    f = open(log_file, "a")
-    f.write("Client opened connection\n")
-    # establish connection to recieve messages from the client
-    clientSocket, serverSocket = connectToClient(proxySocket, fake_ip, server_ip)
-    
-    
-    # establish connection to the server
-    
-    # receive message from the client, forwarded to server
+   
+def runProxy(clientSocket, serverSocket):
+    # receive message from the client
+    while True:
+        header, body = receiveMessage(clientSocket)
+        
+        # read the header
+        # get the number of bits needed for the byte
+        # recv on loop until the number of bits is reached
     
     # receive messages from server 
+    # read header
+    # receive message until the whole chunk has arrived
     # log the messages in format <time> <duration> <server-ip> <chunkname> <chunk-size>
     
-    # send messages to the client
+    # send the full message to the client
     
     # repeat 
     
     # if the client closes the connection, close the connection, close the file and return
-    pass
-
+ 
+       
+def handle_client(clientSocket, log_file, fake_ip):
+    # write to log file
+    f = open(log_file, "a")
+    f.write("Client opened connection\n")
+    # establish connection to recieve messages from the client
+    # establish connection to the server
+    serverSocket = connectToServer(fake_ip, server_ip)
+    
+    runProxy(clientSocket, serverSocket)
+    
+    
+#Main
 if __name__ == "__main__":
     if len(sys.argv) != 5:
         print("Usage: python3", sys.argv[0], "<log>", "<listen-port>", "<fake-ip>", "<server-ip>")
@@ -56,16 +98,12 @@ if __name__ == "__main__":
 
     proxySocket.bind(("", listen_port))
 
-    # TODO set up connection to client and server
-    proxySocket.listen(1)
+    proxySocket.listen(5)
     
-    # setup server connection to apache server
-
     # continuously listen for client
     while True:
         client_socket, client_address = proxySocket.accept()
-        print(f"Connection from {client_address}")
+        print(f"Client connected, starting thread")
         # Spin up a new thread to handle the client
-        threading.Thread(target=handle_client, args=(client_socket,log_file, fake_ip)).start()
+        threading.Thread(target=handle_client, args=(client_socket, log_file, fake_ip)).start()
         
-        # Make sure to test for eveyrthing from project 1
