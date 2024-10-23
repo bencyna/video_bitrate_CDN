@@ -28,15 +28,7 @@ def receiveMessageHeader(socket):
     headers_data, body = buffer.split("\r\n\r\n", 1)
     headers_data += "\r\n\r\n"
     
-    # Split headers into individual lines
-    headers = headers_data.split("\r\n")
-    
-    # Print out the request line and headers
-    print("Request Line:", headers[0])  
-    print("Headers:")
-    for header in headers[1:]:  # Iterate over the remaining lines (the headers)
-        print(header)
-    print("header done")
+    print(headers)
     return headers, body
 
 def receiveMessageServer(socket):
