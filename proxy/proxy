@@ -1,93 +1,114 @@
 #!/usr/bin/env python3
 import threading
-
 from socket import *
 import sys
+import re
+
 def closeConnections(clientSocket, serverSocket):
     clientSocket.close()
     serverSocket.close()
     print("Closed connections")
     
 def sendMessage(message, socket):
-    data_to_send = "".join(message).encode()
-    socket.sendall(data_to_send) 
+    if isinstance(message, str):
+        message = message.encode()
+    socket.sendall(message)
 
-def receiveMessageHeader(socket):  
-    buffer = ""
-    # get headers
+def receiveMessageHeader(socket):
+    buffer = bytearray()
     while True:
-        data = socket.recv(1024).decode()
-        print("data coming in recv: ", data)
-        buffer += data
-        if "\r\n\r\n" in buffer:
+        chunk = socket.recv(1024)
+        if not chunk:
             break
-          
-    # Separate headers from the rest of the message
-    headers_data, body = buffer.split("\r\n\r\n", 1)
-    headers_data += "\r\n\r\n"
+        buffer.extend(chunk)
+        if b'\r\n\r\n' in buffer:
+            break
     
-    print(headers_data)
-    return headers_data, body
+    # Split at the first occurrence of \r\n\r\n
+    header_end = buffer.find(b'\r\n\r\n') + 4
+    headers = buffer[:header_end]
+    remaining_body = buffer[header_end:]
+    
+    # Decode headers (headers should always be ASCII/UTF-8)
+    headers_str = headers.decode('iso-8859-1')
+    
+    return headers_str, remaining_body
+
+def get_content_length(headers):
+    match = re.search(r'Content-Length: (\d+)', headers, re.IGNORECASE)
+    if match:
+        return int(match.group(1))
+    return None
 
 def receiveMessageServer(socket):
-    header, body = receiveMessageHeader(socket)
-    print("message from server header",header)
-    print("message from server body",body)
-    # read the content length 
-    # receive into body until the content length reached
-    message = header.extend(body)
-    return message
-
+    headers_str, initial_body = receiveMessageHeader(socket)
+    
+    # Initialize response with headers and any initial body data
+    response = headers_str.encode('iso-8859-1')
+    body = initial_body
+    
+    # Get content length if available
+    content_length = get_content_length(headers_str)
+    
+    if content_length is not None:
+        # Keep receiving until we get the full content length
+        remaining = content_length - len(initial_body)
+        while remaining > 0:
+            chunk = socket.recv(min(remaining, 8192))
+            if not chunk:
+                break
+            body += chunk
+            remaining -= len(chunk)
+    # otherwise we have the full message
+    
+    # Combine headers and body
+    full_response = response + body
+    return full_response
 
 def connectToServer(fake_ip, server_ip):
-    # bind to a server
     serverSocket = socket(AF_INET, SOCK_STREAM)
     serverSocket.bind((fake_ip, 0))
-    
-    # connect to the server
     serverSocket.connect((server_ip, 80))
     print("Connected to server")
-    
     return serverSocket
 
-   
 def runProxy(clientSocket, serverSocket):
-    while True:
-        # receive message from the client
-        # read the header
-        header, _ = receiveMessageHeader(clientSocket)
+    try:
+        while True:
+            # Receive message from the client
+            header, _ = receiveMessageHeader(clientSocket)
+            if not header:
+                break
+                
+            # Forward message to server
+            print("Sending header to server")
+            sendMessage(header, serverSocket)
         
-        # forward message to server
-        print("sending header to server")
-        sendMessage(header, serverSocket)
-    
-        # receive messages from server 
-        server_message = receiveMessageServer(serverSocket)
-        
-        # read header
-        # receive message until the whole chunk has arrived
-        # log the messages in format <time> <duration> <server-ip> <chunkname> <chunk-size>
-        
-        # send the full message to the client
-        
-        # repeat 
-        
-        # if the client closes the connection, close the connection, close the file and return
- 
-       
+            # Receive messages from server and forward to client
+            server_message = receiveMessageServer(serverSocket)
+            if not server_message:
+                break
+                
+            # Forward the complete message to the client
+            sendMessage(server_message, clientSocket)
+            
+    except Exception as e:
+        print(f"Error in proxy: {e}")
+    finally:
+        closeConnections(clientSocket, serverSocket)
+
 def handle_client(clientSocket, log_file, fake_ip):
-    # write to log file
-    f = open(log_file, "a")
-    f.write("Client opened connection\n")
-    # establish connection to recieve messages from the client
-    # establish connection to the server
-    serverSocket = connectToServer(fake_ip, server_ip)
-    
-    
-    runProxy(clientSocket, serverSocket)
-    
-    
-#Main
+    try:
+        with open(log_file, "a") as f:
+            f.write("Client opened connection\n")
+        
+        serverSocket = connectToServer(fake_ip, server_ip)
+        runProxy(clientSocket, serverSocket)
+        
+    except Exception as e:
+        print(f"Error handling client: {e}")
+        closeConnections(clientSocket, serverSocket)
+
 if __name__ == "__main__":
     if len(sys.argv) != 5:
         print("Usage: python3", sys.argv[0], "<log>", "<listen-port>", "<fake-ip>", "<server-ip>")
@@ -100,15 +121,15 @@ if __name__ == "__main__":
     print("log path: ", log_file, "Listen Port:", listen_port, "Fake IP:", fake_ip, "Server IP:", server_ip)
 
     proxySocket = socket(AF_INET, SOCK_STREAM)
-
     proxySocket.bind(("", listen_port))
-
     proxySocket.listen(5)
     
-    # continuously listen for client
-    while True:
-        client_socket, client_address = proxySocket.accept()
-        print(f"Client connected, starting thread")
-        # Spin up a new thread to handle the client
-        threading.Thread(target=handle_client, args=(client_socket, log_file, fake_ip)).start()
-        
+    try:
+        while True:
+            client_socket, client_address = proxySocket.accept()
+            print(f"Client connected, starting thread")
+            threading.Thread(target=handle_client, args=(client_socket, log_file, fake_ip)).start()
+    except KeyboardInterrupt:
+        print("\nShutting down proxy server...")
+    finally:
+        proxySocket.close()
