@@ -1,7 +1,25 @@
 #!/usr/bin/env python3
+import threading
 
 from socket import *
 import sys
+
+def handle_client(client_socket):
+    # establish connection to recieve messages from the client
+    
+    # establish connection to receive messages from the server
+    
+    # send messages to the server
+    
+    # receive messages from server 
+    # log the messages 
+    
+    # send messages to the client
+    
+    # repeat 
+    
+    # if the client closes the connection, close the connection and return 
+    pass
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
@@ -14,9 +32,20 @@ if __name__ == "__main__":
     server_ip = str(sys.argv[4])    
     print("log path: ", log_file, "Listen Port:", listen_port, "Fake IP:", fake_ip, "Server IP:", server_ip)
 
+    proxySocket = socket(AF_INET, SOCK_STREAM)
+
+    proxySocket.bind(("", listen_port))
+
     # TODO set up connection to client and server
-    # For each new client, we have to create a thread and then re listen to the accept more clients 
+    proxySocket.listen(1)
     
-    # Once the client and server are running, see if we can log stuff to the log file
-    
-    # Make sure to test for eveyrthing from project 1
+    # setup server connection to apache server
+
+    # continuously listen for client
+    while True:
+        client_socket, client_address = proxySocket.accept()
+        print(f"Connection from {client_address}")
+        # Spin up a new thread to handle the client
+        threading.Thread(target=handle_client, args=(client_socket,)).start()
+        
+        # Make sure to test for eveyrthing from project 1
