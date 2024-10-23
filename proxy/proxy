@@ -9,7 +9,7 @@ def closeConnections(clientSocket, serverSocket):
     print("Closed connections")
     
 def sendMessage(message, socket):
-    data_to_send = "".join(message).encode('utf-8')
+    data_to_send = "".join(message).encode()
     print("message: ", "".join(message))
     socket.sendall(data_to_send) 
 
@@ -18,7 +18,7 @@ def receiveMessageHeader(socket):
     buffer = ""
     # get headers
     while True:
-        data = socket.recv(1024).decode('utf-8')
+        data = socket.recv(1024).decode()
 
         buffer += data
         if "\r\n\r\n" in buffer:
