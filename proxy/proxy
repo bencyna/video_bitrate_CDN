@@ -5,7 +5,7 @@ import sys
 import re
 import time
 
-def logContents(client_header, server_message, log_file, downloadTimeStart):
+def logContents(client_header, server_message, log_file_path, downloadTimeStart):
     # <time> <duration> <server-ip> <chunkname> <chunk-size>
     try:
         decoded_server_message = server_message.decode('iso-8859-1')
@@ -151,14 +151,15 @@ if __name__ == "__main__":
     proxySocket.bind(("", listen_port))
     proxySocket.listen(5)
     
+    # make sure log file is empty and exists
     with open(log_file, "w") as f:
-        pass
+        close()
     
     try:
         while True:
             client_socket, client_address = proxySocket.accept()
             print(f"Client connected, starting thread")
-            threading.Thread(target=handle_client, args=(client_socket, f, fake_ip)).start()
+            threading.Thread(target=handle_client, args=(client_socket, log_file, fake_ip)).start()
     except KeyboardInterrupt:
         print("\nShutting down proxy server...")
     finally:
