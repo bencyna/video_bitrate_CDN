@@ -11,7 +11,7 @@ def logContents(client_header, server_message, log_file_path, downloadTimeStart)
         decoded_server_message = server_message.decode('iso-8859-1')
         current_time = time.time()
         duration = current_time - downloadTimeStart
-        server_ip = getStringFromHeader(decoded_server_message, r'Host: (\d+\.\d+\.\d+\.\d+)')
+        server_ip = getStringFromHeader(decoded_server_message, r'Host: ([\w\.-]+)')
         chunk_name = getStringFromHeader(client_header, r'GET /(.+?) HTTP')
         chunk_size = getStringFromHeader(decoded_server_message, r'Content-Length: (\d+)')
         
