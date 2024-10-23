@@ -17,6 +17,7 @@ def logContents(client_header, server_message, log_file_path, downloadTimeStart)
         
         with open(log_file, "a") as f:
             f.write(f"{current_time} {duration} {server_ip} {chunk_name} {chunk_size}\n")
+            f.close()
     except Exception as e: 
         print("Error logging contents:", e)
         print("Server message:", decoded_server_message)
@@ -153,8 +154,8 @@ if __name__ == "__main__":
     
     # make sure log file is empty and exists
     with open(log_file, "w") as f:
-        close(log_file)
-    
+        f.close()
+      
     try:
         while True:
             client_socket, client_address = proxySocket.accept()
@@ -164,4 +165,3 @@ if __name__ == "__main__":
         print("\nShutting down proxy server...")
     finally:
         proxySocket.close()
-        f.close()
