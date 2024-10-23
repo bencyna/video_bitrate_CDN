@@ -9,23 +9,24 @@ def closeConnections(clientSocket, serverSocket):
     print("Closed connections")
     
 def sendMessage(message, socket):
-    data_to_send = "".join(message).encode()
+    data_to_send = "".join(message).encode('utf-8')
     print("message: ", "".join(message))
     socket.sendall(data_to_send) 
 
-def receiveMessage(socket):  
+def receiveMessageHeader(socket):  
     headers = []
     buffer = ""
+    # get headers
     while True:
         data = client_socket.recv(1024).decode('utf-8')
         print(data)
         buffer += data
         if "\r\n\r\n" in buffer:
             break
-
+          
     # Separate headers from the rest of the message
     headers_data, body = buffer.split("\r\n\r\n", 1)
-
+    
     # Split headers into individual lines
     headers = headers_data.split("\r\n")
     
@@ -37,6 +38,15 @@ def receiveMessage(socket):
         print(f"{key.strip()}: {value.strip()}")  # Strip to clean up whitespace
     
     return headers, body
+
+def receiveMessageServer(socket):
+    header, body = receiveMessageHeader(socket)
+    # read the content length 
+    
+    # receive into body until the content length reached
+    message = header.extend(body)
+    return message
+
 
 def connectToServer(fake_ip, server_ip):
     # bind to a server
@@ -51,24 +61,26 @@ def connectToServer(fake_ip, server_ip):
 
    
 def runProxy(clientSocket, serverSocket):
-    # receive message from the client
     while True:
-        header, body = receiveMessage(clientSocket)
-        
+        # receive message from the client
         # read the header
-        # get the number of bits needed for the byte
-        # recv on loop until the number of bits is reached
+        header, _ = receiveMessageHeader(clientSocket)
+        
+        # forward message to server
+        sendMessage(header, serverSocket)
     
-    # receive messages from server 
-    # read header
-    # receive message until the whole chunk has arrived
-    # log the messages in format <time> <duration> <server-ip> <chunkname> <chunk-size>
-    
-    # send the full message to the client
-    
-    # repeat 
-    
-    # if the client closes the connection, close the connection, close the file and return
+        # receive messages from server 
+        server_message = receiveMessageServer(serverSocket)
+        
+        # read header
+        # receive message until the whole chunk has arrived
+        # log the messages in format <time> <duration> <server-ip> <chunkname> <chunk-size>
+        
+        # send the full message to the client
+        
+        # repeat 
+        
+        # if the client closes the connection, close the connection, close the file and return
  
        
 def handle_client(clientSocket, log_file, fake_ip):
@@ -78,6 +90,7 @@ def handle_client(clientSocket, log_file, fake_ip):
     # establish connection to recieve messages from the client
     # establish connection to the server
     serverSocket = connectToServer(fake_ip, server_ip)
+    
     
     runProxy(clientSocket, serverSocket)
     
