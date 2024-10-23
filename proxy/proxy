@@ -35,8 +35,7 @@ def receiveMessageHeader(socket):
     print("Request Line:", headers[0])  
     print("Headers:")
     for header in headers[1:]:  # Iterate over the remaining lines (the headers)
-        key, value = header.split(":", 1)
-        print(f"{key.strip()}: {value.strip()}")  # Strip to clean up whitespace
+        print(header)
     print("header done")
     return headers, body
 
