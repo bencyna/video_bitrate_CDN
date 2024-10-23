@@ -10,16 +10,14 @@ def closeConnections(clientSocket, serverSocket):
     
 def sendMessage(message, socket):
     data_to_send = "".join(message).encode()
-    print("message: ", "".join(message))
     socket.sendall(data_to_send) 
 
 def receiveMessageHeader(socket):  
-    headers = []
     buffer = ""
     # get headers
     while True:
         data = socket.recv(1024).decode()
-
+        print("data coming in recv: ", data)
         buffer += data
         if "\r\n\r\n" in buffer:
             break
