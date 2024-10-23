@@ -28,13 +28,14 @@ def receiveMessageHeader(socket):
     headers_data, body = buffer.split("\r\n\r\n", 1)
     headers_data += "\r\n\r\n"
     
-    print(headers)
-    return headers, body
+    print(headers_data)
+    return headers_data, body
 
 def receiveMessageServer(socket):
     header, body = receiveMessageHeader(socket)
+    print("message from server header",header)
+    print("message from server body",body)
     # read the content length 
-    
     # receive into body until the content length reached
     message = header.extend(body)
     return message
