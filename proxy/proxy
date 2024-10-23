@@ -19,13 +19,14 @@ def receiveMessageHeader(socket):
     # get headers
     while True:
         data = client_socket.recv(1024).decode('utf-8')
-        print(data)
+
         buffer += data
         if "\r\n\r\n" in buffer:
             break
           
     # Separate headers from the rest of the message
     headers_data, body = buffer.split("\r\n\r\n", 1)
+    headers_data += "\r\n\r\n"
     
     # Split headers into individual lines
     headers = headers_data.split("\r\n")
@@ -36,7 +37,7 @@ def receiveMessageHeader(socket):
     for header in headers[1:]:  # Iterate over the remaining lines (the headers)
         key, value = header.split(":", 1)
         print(f"{key.strip()}: {value.strip()}")  # Strip to clean up whitespace
-    
+    print("header done")
     return headers, body
 
 def receiveMessageServer(socket):
@@ -67,6 +68,7 @@ def runProxy(clientSocket, serverSocket):
         header, _ = receiveMessageHeader(clientSocket)
         
         # forward message to server
+        print("sending header to server")
         sendMessage(header, serverSocket)
     
         # receive messages from server 
