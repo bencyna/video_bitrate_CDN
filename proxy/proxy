@@ -9,7 +9,6 @@ def logContents(client_header, server_message, log_file_path, downloadTimeStart)
     # <time> <duration> <server-ip> <chunkname> <chunk-size>
     try:
         decoded_server_message = server_message.decode('iso-8859-1')
-        print("Decoded server message:", decoded_server_message)
         current_time = time.time()
         duration = current_time - downloadTimeStart
         # server_ip = getStringFromHeader(decoded_server_message, r'Host: ([\w\.-]+)')
@@ -22,8 +21,8 @@ def logContents(client_header, server_message, log_file_path, downloadTimeStart)
             f.close()
     except Exception as e: 
         print("Error logging contents:", e)
-        print("Server message:", decoded_server_message)
-        print("header client message:", client_header)
+        # print("Server message:", decoded_server_message)
+        # print("header client message:", client_header)
 
 def closeConnections(clientSocket, serverSocket):
     clientSocket.close()
@@ -111,7 +110,6 @@ def runProxy(clientSocket, serverSocket, log_file):
                 closeConnections(clientSocket, serverSocket)
                 
             # Forward message to server
-            print("Sending header to server")
             downloadTimeStart = time.time()
             sendMessage(header, serverSocket)
         
