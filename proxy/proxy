@@ -8,17 +8,19 @@ import time
 def logContents(client_header, server_message, log_file, downloadTimeStart):
     # <time> <duration> <server-ip> <chunkname> <chunk-size>
     try:
-        server_message.decode('iso-8859-1')
+        decoded_server_message = server_message.decode('iso-8859-1')
         current_time = time.time()
         duration = current_time - downloadTimeStart
-        server_ip = getStringFromHeader(server_message, r'Host: (\d+\.\d+\.\d+\.\d+)')
+        server_ip = getStringFromHeader(decoded_server_message, r'Host: (\d+\.\d+\.\d+\.\d+)')
         chunk_name = getStringFromHeader(client_header, r'GET /(.+?) HTTP')
-        chunk_size = getStringFromHeader(server_message, r'Content-Length: (\d+)')
+        chunk_size = getStringFromHeader(decoded_server_message, r'Content-Length: (\d+)')
         
         with open(log_file, "a") as f:
             f.write(f"{current_time} {duration} {server_ip} {chunk_name} {chunk_size}\n")
     except Exception as e: 
         print("Error logging contents:", e)
+        print("Server message:", decoded_server_message)
+        print("header client message:", client_header)
 
 def closeConnections(clientSocket, serverSocket):
     clientSocket.close()
