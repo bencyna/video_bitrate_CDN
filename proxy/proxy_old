@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+from socket import *
+import sys
+import select
+
+def isSocketClosed(message):
+    for msg in message:
+        if "exit()" in msg:
+            return True
+          
+        return False
+
+def closeConnections(clienrtSocket, serverSocket):
+    clientSocket.close()
+    serverSocket.close()
+    print("Closed connections")
+    
+def sendMessage(message, socket):
+    data_to_send = "".join(message).encode()
+    print("message: ", "".join(message))
+    socket.sendall(data_to_send)    
+
+def receiveMessage(socket):  
+    message = []
+    EOM = False
+    while not EOM:
+        data = socket.recv(2048).decode()
+        message.append(data)
+        if "\n" in data:
+            EOM = True
+    
+    return message
+            
+def runProxy(clientSocket, serverSocket):
+    while True:
+        client_message = receiveMessage(clientSocket)
+        print("here is the whole client message: ", client_message)
+        if isSocketClosed(client_message):
+            break
+        sendMessage(client_message, serverSocket)
+        
+        server_message = receiveMessage(serverSocket)
+        sendMessage(server_message, clientSocket)
+        
+        if isSocketClosed(server_message):
+            break
+
+def connectToClient(proxySocket, fake_ip, server_ip):
+    # while client is connected, listen for a message from the client
+    clientSocket, client_address = proxySocket.accept()
+    print("Accepted client")
+    
+    # bind to a server
+    serverSocket = socket(AF_INET, SOCK_STREAM)
+    serverSocket.bind((fake_ip, 0))
+    
+    # connect to the server
+    serverSocket.connect((server_ip, 8080))
+    print("Connected to server")
+    
+    return clientSocket, serverSocket
+# Access command line arguments using sys.argv
+if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        print("Usage: python3", sys.argv[0], "<listen_port>, <fake_ip> <servier_ip>")
+        sys.exit()
+        
+    listen_port = int(sys.argv[1])    
+    fake_ip = str(sys.argv[2])    
+    server_ip = str(sys.argv[3])    
+    print("Listen Port:", listen_port, "Fake IP:", fake_ip, "Server IP:", server_ip)
+
+    proxySocket = socket(AF_INET, SOCK_STREAM)
+
+    # listen for a client to connect 
+    proxySocket.bind(("", listen_port))
+    
+    proxySocket.listen(5)
+    
+    while True:
+        clientSocket, serverSocket = connectToClient(proxySocket, fake_ip, server_ip)
+        # once connection is made run the interaction.
+        runProxy(clientSocket, serverSocket)
+        # close the connections
+        closeConnections(clientSocket, serverSocket)
