@@ -153,7 +153,7 @@ if __name__ == "__main__":
     
     # make sure log file is empty and exists
     with open(log_file, "w") as f:
-        close()
+        close(log_file)
     
     try:
         while True:
