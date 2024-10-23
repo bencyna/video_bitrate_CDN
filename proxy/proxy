@@ -114,7 +114,7 @@ def runProxy(clientSocket, serverSocket, log_file):
                 
             # foward the message to the client
             sendMessage(server_message, clientSocket)
-            logContents(header, server_message, log_file, downloadTimeStart)
+            # logContents(header, server_message, log_file, downloadTimeStart)
             
     except Exception as e:
         print(f"Error in proxy: {e}")
