@@ -87,7 +87,7 @@ def receiveMessageServer(socket):
     
     # Combine headers and body
     full_response = response + body
-    return full_response
+    return full_response, response
 
 def connectToServer(fake_ip, server_ip):
     serverSocket = socket(AF_INET, SOCK_STREAM)
@@ -111,13 +111,13 @@ def runProxy(clientSocket, serverSocket, log_file):
             sendMessage(header, serverSocket)
         
             # Receive messages from server and forward to client
-            server_message = receiveMessageServer(serverSocket)
+            server_message, server_header = receiveMessageServer(serverSocket)
             if not server_message:
                 break
                 
             # foward the message to the client
             sendMessage(server_message, clientSocket)
-            logContents(header, server_message, log_file, downloadTimeStart)
+            logContents(header, server_header, log_file, downloadTimeStart)
             
     except Exception as e:
         print(f"Error in proxy: {e}")
