@@ -22,12 +22,12 @@ def logContents(client_header, server_message, log_file_path, downloadTimeStart)
         current_time = time.time()
         duration = current_time - downloadTimeStart
         # server_ip = getStringFromHeader(decoded_server_message, r'Host: ([\w\.-]+)')
-        server_ip = "127.0.0.1"
+        server_ip = "3.0.0.1"
         chunk_name = getStringFromHeader(client_header, r'GET /(.+?) HTTP')
         chunk_size = getServerMessageChunkSize(server_message)
         
         with open(log_file, "a") as f:
-            f.write(f"{current_time} {duration} {server_ip} {chunk_name} {chunk_size}\n")
+            f.write(f"{current_time} {duration} {server_ip} /{chunk_name} {chunk_size}\n")
             f.close()
     except Exception as e: 
         print("Error logging contents:", e)
@@ -162,7 +162,7 @@ if __name__ == "__main__":
     alpha = float(sys.argv[3])
     listen_port = int(sys.argv[4])    
     fake_ip = str(sys.argv[5])    
-    server_ip = str(sys.argv[6])    
+    server_ip = "3.0.0.1"
     print("topo_dir:", topo_dir, "log_file:", log_file, "alpha:", alpha, "listen_port:", listen_port, "fake_ip:", fake_ip, "server_ip:", server_ip)
 
     proxySocket = socket(AF_INET, SOCK_STREAM)
