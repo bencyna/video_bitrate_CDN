@@ -50,6 +50,7 @@ def setBitrate(bitrates, t_current):
     # set the bitrate to the highest bitrate that is less than the current throughput
     max_bitrate = 0
     min_bitrate = 10**10
+    print(bitrates)
     for bitrate in bitrates:
         bitrate_int = int(bitrate)
         if bitrate_int > t_current*1.5 and bitrate_int > max_bitrate:
