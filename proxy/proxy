@@ -65,14 +65,12 @@ def receiveMessageHeader(socket):
     
     # decode the headers
     headers_str = headers.decode('iso-8859-1')
-    requesting_manifest = False
     if "6s_nolist.mpd" in headers_str:
-        requesting_manifest = True
         headers_str.replace("6s_nolist.mpd", "6s.mpd")
-        
-    print(headers_str)
     
-    return headers_str, remaining_body, requesting_manifest
+    print(headers_str)
+        
+    return headers_str, remaining_body
 
 def getStringFromHeader(headers, string):
     match = re.search(string, headers, re.IGNORECASE)
@@ -86,7 +84,7 @@ def getContentLength(headers):
         return int(match.group(1))
     return None
 
-def receiveMessageServer(socket, receiving_manifest = False):
+def receiveMessageServer(socket):
     headers_str, initial_body = receiveMessageHeader(socket)
     
     # encode the headers 
@@ -106,10 +104,8 @@ def receiveMessageServer(socket, receiving_manifest = False):
             remaining -= len(chunk)
             
     # otherwise we have the full message
-    if receiving_manifest:
-        print("Received manifest")
-        print(body.decode())
-  
+    print("Received message from server")
+    print(body.decode('iso-8859-1'))  
     
     # Combine headers and body
     full_response = response + body
@@ -129,7 +125,7 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
         t_current = 0 # intialise this to be the lowest possible bitrate for the pair
         while True:
             # Receive message from the client
-            header, _, requesting_manifest = receiveMessageHeader(clientSocket)
+            header, _ = receiveMessageHeader(clientSocket)
             if not header:
                 # Client closed connection
                 closeConnections(clientSocket, serverSocket)
@@ -139,7 +135,7 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
             sendMessage(header, serverSocket)
         
             # Receive messages from server and forward to client
-            server_message, server_header = receiveMessageServer(serverSocket, requesting_manifest)
+            server_message, server_header = receiveMessageServer(serverSocket)
             if not server_message:
                 break
               
