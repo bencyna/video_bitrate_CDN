@@ -63,10 +63,12 @@ def receiveMessageHeader(socket):
     headers = buffer[:header_end]
     remaining_body = buffer[header_end:]
     
-    print(remaining_body.decode('utf-8'))
-    
     # decode the headers
     headers_str = headers.decode('iso-8859-1')
+    
+    # get the proper manifest file
+    if 'GET /manifest.json' in headers_str:
+        headers_str = headers_str.replace('/nolist.json', '/full.json')
     
     return headers_str, remaining_body
 
@@ -102,6 +104,17 @@ def receiveMessageServer(socket):
             remaining -= len(chunk)
             
     # otherwise we have the full message
+    
+    # Check if the response is the manifest file
+    if 'GET /manifest.json' in headers_str:
+        # Parse the JSON data from the manifest file
+        manifest_data = json.loads(body.decode('utf-8'))
+        
+        # Extract the available bitrates/bandwidth options
+        bitrates = [stream['bitrate'] for stream in manifest_data['streams']]
+        
+        # You can now work with the bitrate information as needed
+        print(f"Available bitrates: {', '.join(map(str, bitrates))}")
     
     # Combine headers and body
     full_response = response + body
