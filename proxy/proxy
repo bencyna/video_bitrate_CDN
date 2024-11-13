@@ -5,33 +5,6 @@ import sys
 import re
 import time    
 
-def parseBitrates(server_message):
-    bitrates = []
-    
-    parts = server_message.split('bandwidth="')
-    
-    for part in parts[1:]:
-        bitrate = part.split('"')[0]
-        bitrates.append(bitrate)
-    
-    return bitrates
-
-    
-
-def setBitrate(bitrates, t_current):
-    # set the bitrate to the highest bitrate that is less than the current throughput
-    max_bitrate = 0
-    min_bitrate = 1000000000
-    for bitrate in bitrates:
-        if int(bitrate) <= 1.5*t_current and max_bitrate < int(bitrate):
-            max_bitrate = int(bitrate)
-
-        if int(bitrate) < min_bitrate:
-            min_bitrate = int(bitrate)
-        
-    return max_bitrate if max_bitrate != 0 else min_bitrate
-    
-        
 def getBitrates(serverSocket):
     # get the manifest file from the server
     # parse the manifest file to get the bitrates
@@ -55,11 +28,16 @@ Accept-Language: en-US,en;q=0.9\r\n\
         
     # Receive messages from server and forward to client
     server_message, server_header = receiveMessageServer(serverSocket)
+    print("got_bitrates")
+    print(server_message)
     if not server_message:
         return []
-      
-    return parseBitrates(server_message)
     
+    
+
+def setBitrate(bitrates, t_current):
+    # set the bitrate to the highest bitrate that is less than the current throughput
+    pass
 
 def getServerMessageChunkSize(server_message):
     decoded_server_message = server_message.decode('iso-8859-1')
