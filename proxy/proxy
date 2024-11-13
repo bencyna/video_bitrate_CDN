@@ -161,8 +161,9 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
             if not header:
                 # Client closed connection
                 closeConnections(clientSocket, serverSocket)
-
+            print(header)
             if "application/dash+xml" in header:
+                print("app in header, getting bitrates")
                 bitrates = getBitrates(serverSocket) # get the full mainfest file and return the bitrates
                 
                 
