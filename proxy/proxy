@@ -138,15 +138,17 @@ def handle_client(clientSocket, log_file, fake_ip):
         closeConnections(clientSocket, serverSocket)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 5:
-        print("Usage: python3", sys.argv[0], "<log>", "<listen-port>", "<fake-ip>", "<server-ip>")
+    if len(sys.argv) != 7:
+        print("Usage: python3", sys.argv[0], "<topo_dir>", "<log>", "alpha", "<listen-port>", "<fake-ip>", "<dns-server-ip>")
         sys.exit()
         
-    log_file = str(sys.argv[1])
-    listen_port = int(sys.argv[2])    
-    fake_ip = str(sys.argv[3])    
-    server_ip = str(sys.argv[4])    
-    print("log path: ", log_file, "Listen Port:", listen_port, "Fake IP:", fake_ip, "Server IP:", server_ip)
+    topo_dir = str(sys.argv[1])
+    log_file = str(sys.argv[2])
+    alpha = float(sys.argv[3])
+    listen_port = int(sys.argv[4])    
+    fake_ip = str(sys.argv[5])    
+    server_ip = str(sys.argv[6])    
+    print("topo_dir:", topo_dir, "log_file:", log_file, "alpha:", alpha, "listen_port:", listen_port, "fake_ip:", fake_ip, "server_ip:", server_ip)
 
     proxySocket = socket(AF_INET, SOCK_STREAM)
     proxySocket.bind(("", listen_port))
