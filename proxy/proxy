@@ -5,60 +5,39 @@ import sys
 import re
 import time    
 
-def getBitrates(serverSocket, old_bitrates):
+def getBitrates(serverSocket):
     # get the manifest file from the server
     # parse the manifest file to get the bitrates
     # return the bitrates
-    print("about to get bitrates")
     header = '''GET /BigBuckBunny_6s.mpd HTTP/1.1\r\n\
-    Host: localhost:50048\r\n\
-    Connection: keep-alive\r\n\
-    sec-ch-ua: "Not/A)Brand";v="99", "Google Chrome";v="115", "Chromium";v="115"\r\n\
-    sec-ch-ua-mobile: ?0\r\n\
-    User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36\r\n\
-    sec-ch-ua-platform: "Linux"\r\n\
-    Accept: */*\r\n\
-    Sec-Fetch-Site: same-origin\r\n\
-    Sec-Fetch-Mode: cors\r\n\
-    Sec-Fetch-Dest: empty\r\n\
-    Referer: http://localhost:50048/\r\n\
-    Accept-Encoding: gzip, deflate, br\r\n\
-    Accept-Language: en-US,en;q=0.9\r\n\
-    \r\n'''
+Host: localhost:50048\r\n\
+Connection: keep-alive\r\n\
+sec-ch-ua: "Not/A)Brand";v="99", "Google Chrome";v="115", "Chromium";v="115"\r\n\
+sec-ch-ua-mobile: ?0\r\n\
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36\r\n\
+sec-ch-ua-platform: "Linux"\r\n\
+Accept: */*\r\n\
+Sec-Fetch-Site: same-origin\r\n\
+Sec-Fetch-Mode: cors\r\n\
+Sec-Fetch-Dest: empty\r\n\
+Referer: http://localhost:50048/\r\n\
+Accept-Encoding: gzip, deflate, br\r\n\
+Accept-Language: en-US,en;q=0.9\r\n\
+\r\n'''
     sendMessage(header, serverSocket)
-    print("just sent get request for bitrates to server")
+        
     # Receive messages from server and forward to client
     server_message, server_header = receiveMessageServer(serverSocket)
+    print("got_bitrates")
+    print(server_message)
     if not server_message:
-        return old_bitrates
-    
-    bitrates = []
-    parts = server_message.split('bandwidth="')
-    print(parts)
-    for part in parts[1:]:
-        bitrate = part.split('"')[0]
-        print(bitrate)
-        bitrates.append(bitrate)
-        
-    print("bitrates: ", bitrates)
-    return bitrates
+        return []
     
     
 
 def setBitrate(bitrates, t_current):
     # set the bitrate to the highest bitrate that is less than the current throughput
-    max_bitrate = 0
-    min_bitrate = 1000000000
-    for bitrate in bitrates:
-        if int(bitrate) <= 1.5*t_current and max_bitrate < int(bitrate):
-            max_bitrate = int(bitrate)
-
-        if int(bitrate) < min_bitrate:
-            min_bitrate = int(bitrate)
-        
-    return max_bitrate if max_bitrate != 0 else min_bitrate
-    
-        
+    pass
 
 def getServerMessageChunkSize(server_message):
     decoded_server_message = server_message.decode('iso-8859-1')
@@ -173,23 +152,20 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
         bitrates = []
         # t_current = lowest av bitrate for client server pair
         t_current = 0 # intialise this to be the lowest possible bitrate for the pair
-        current_bitrate = None
         while True:
+            # Receive message from the client
             header, body = receiveMessageHeader(clientSocket)
-            print("receving message from client")
             if not header:
+                # Client closed connection
                 closeConnections(clientSocket, serverSocket)
-                
             if "BigBuckBunny_6s_nolist.mpd" in header:
-                # update the bitrates
-                bitrates = getBitrates(serverSocket, bitrates) # get the full mainfest file and return the bitrates
+                print("app in header, getting bitrates")
+                bitrates = getBitrates(serverSocket) # get the full mainfest file and return the bitrates
                 
                 
             # Forward message to server
             downloadTimeStart = time.time()
-            print("about to message the server")
             sendMessage(header, serverSocket)
-            
         
             # Receive messages from server and forward to client
             server_message, server_header = receiveMessageServer(serverSocket)
@@ -202,8 +178,7 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
             
             print(f"Throughput: {t_current} bits/sec")
                 
-            current_bitrate = setBitrate(bitrates, t_current)
-            print(f"Setting bitrate to: {current_bitrate}")
+            setBitrate(bitrates, t_current)
             # foward the message to the client
             sendMessage(server_message, clientSocket)
             logContents(header, server_header, log_file, downloadTimeStart)
