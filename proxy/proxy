@@ -179,7 +179,7 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
                 
             if "BigBuckBunny_6s_nolist.mpd" in header:
                 # update the bitrates
-                bitrates = getBitrates(serverSocket) # get the full mainfest file and return the bitrates
+                bitrates = getBitrates(serverSocket, bitrates) # get the full mainfest file and return the bitrates
                 
                 
             # Forward message to server
