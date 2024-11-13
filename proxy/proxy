@@ -10,11 +10,13 @@ def getServerMessageChunkSize(server_message):
     chunk_size = getStringFromHeader(decoded_server_message, r'Content-Length: (\d+)')
     return chunk_size
   
-def getThroughput(downloadTimeEnd, downloadTimeStart, server_message):
+def getThroughput(downloadTimeEnd, downloadTimeStart, server_message, t_old, alpha):
     chunk_size_bits = int(getServerMessageChunkSize(server_message)) // 8
     duration = downloadTimeEnd - downloadTimeStart
-    throughput = int(chunk_size_bits) / duration
-    return throughput
+    new_throughput = int(chunk_size_bits) / duration
+    t_current = alpha * new_throughput + (1 - alpha) * t_old
+    return t_current
+
 
 def logContents(client_header, server_message, log_file_path, downloadTimeStart):
     # <time> <duration> <server-ip> <chunkname> <chunk-size>
@@ -60,6 +62,8 @@ def receiveMessageHeader(socket):
     header_end = buffer.find(b'\r\n\r\n') + 4
     headers = buffer[:header_end]
     remaining_body = buffer[header_end:]
+    
+    print(remaining_body)
     
     # decode the headers
     headers_str = headers.decode('iso-8859-1')
@@ -110,8 +114,11 @@ def connectToServer(fake_ip, server_ip):
     print("Connected to server")
     return serverSocket
 
-def runProxy(clientSocket, serverSocket, log_file, current_throughput = -1):
+
+def runProxy(clientSocket, serverSocket, log_file, alpha):
     try:
+        # t_current = lowest av bitrate for client server pair
+        t_current = 0 # intialise this to be the lowest possible bitrate for the pair
         while True:
             # Receive message from the client
             header, _ = receiveMessageHeader(clientSocket)
@@ -128,10 +135,10 @@ def runProxy(clientSocket, serverSocket, log_file, current_throughput = -1):
             if not server_message:
                 break
               
-            # received messgae from server
+            # received messgae from server, calculate throughput
             downloadTimeEnd = time.time()
-            current_throughput = getThroughput(downloadTimeEnd, downloadTimeStart, server_message)
-            print(f"Throughput: {current_throughput} bits/sec")
+            t_current = getThroughput(downloadTimeEnd, downloadTimeStart, server_message, t_current)
+            print(f"Throughput: {t_current} bits/sec")
                 
             # foward the message to the client
             sendMessage(server_message, clientSocket)
@@ -143,10 +150,10 @@ def runProxy(clientSocket, serverSocket, log_file, current_throughput = -1):
         closeConnections(clientSocket, serverSocket)
 
 
-def handle_client(clientSocket, log_file, fake_ip):
+def handle_client(clientSocket, log_file, fake_ip, alpha):
     try:
         serverSocket = connectToServer(fake_ip, server_ip)
-        runProxy(clientSocket, serverSocket, log_file)
+        runProxy(clientSocket, serverSocket, log_file, alpha)
         
     except Exception as e:
         print(f"Error handling client: {e}")
@@ -177,7 +184,7 @@ if __name__ == "__main__":
         while True:
             client_socket, client_address = proxySocket.accept()
             print(f"Client connected, starting thread")
-            threading.Thread(target=handle_client, args=(client_socket, log_file, fake_ip)).start()
+            threading.Thread(target=handle_client, args=(client_socket, log_file, fake_ip, alpha)).start()
     except KeyboardInterrupt:
         print("\nShutting down proxy server...")
     finally:
