@@ -33,9 +33,10 @@ def getBitrates(serverSocket, old_bitrates):
     
     bitrates = []
     parts = server_message.split('bandwidth="')
-    
+    print(parts)
     for part in parts[1:]:
         bitrate = part.split('"')[0]
+        print(bitrate)
         bitrates.append(bitrate)
         
     print("bitrates: ", bitrates)
