@@ -105,7 +105,7 @@ def receiveMessageServer(socket):
 
 def connectToServer(fake_ip, server_ip):
     serverSocket = socket(AF_INET, SOCK_STREAM)
-    serverSocket.bind((server_ip, 80))
+    serverSocket.bind((server_ip, 0))
     serverSocket.connect((server_ip, 80))
     print("Connected to server")
     return serverSocket
