@@ -4,8 +4,23 @@ from socket import *
 import sys
 import re
 import time    
+    
+    
+def setBitrate(bitrates, t_current):
+    # set the bitrate to the highest bitrate that is less than the current throughput
+    max_bitrate = 0
+    min_bitrate = 1000000000
+    for bitrate in bitrates:
+        if int(bitrate) <= 1.5*t_current and max_bitrate < int(bitrate):
+            max_bitrate = int(bitrate)
 
-def getBitrates(serverSocket):
+        if int(bitrate) < min_bitrate:
+            min_bitrate = int(bitrate)
+        
+    return max_bitrate if max_bitrate != 0 else min_bitrate
+    
+        
+def getBitrates(serverSocket, old_bitrates):
     # get the manifest file from the server
     # parse the manifest file to get the bitrates
     # return the bitrates
@@ -26,18 +41,21 @@ Accept-Language: en-US,en;q=0.9\r\n\
 \r\n'''
     sendMessage(header, serverSocket)
         
-    # Receive messages from server and forward to client
     server_message, server_header = receiveMessageServer(serverSocket)
-    print("got_bitrates")
-    print(server_message)
     if not server_message:
-        return []
+        return old_bitrates
     
+    bitrates = []
+    parts = server_message.split('bandwidth="')
+    print(parts)
+    for part in parts[1:]:
+        bitrate = part.split('"')[0]
+        print(bitrate)
+        bitrates.append(bitrate)
+        
+    print("bitrates: ", bitrates)
+    return bitrates
     
-
-def setBitrate(bitrates, t_current):
-    # set the bitrate to the highest bitrate that is less than the current throughput
-    pass
 
 def getServerMessageChunkSize(server_message):
     decoded_server_message = server_message.decode('iso-8859-1')
@@ -160,7 +178,7 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
                 closeConnections(clientSocket, serverSocket)
             if "BigBuckBunny_6s_nolist.mpd" in header:
                 print("app in header, getting bitrates")
-                bitrates = getBitrates(serverSocket) # get the full mainfest file and return the bitrates
+                bitrates = getBitrates(serverSocket, bitrates) # get the full mainfest file and return the bitrates
                 
                 
             # Forward message to server
