@@ -63,7 +63,7 @@ def receiveMessageHeader(socket):
     headers = buffer[:header_end]
     remaining_body = buffer[header_end:]
     
-    print(remaining_body)
+    print(remaining_body.decode('iso-8859-1'))
     
     # decode the headers
     headers_str = headers.decode('iso-8859-1')
@@ -137,7 +137,7 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
               
             # received messgae from server, calculate throughput
             downloadTimeEnd = time.time()
-            t_current = getThroughput(downloadTimeEnd, downloadTimeStart, server_message, t_current)
+            t_current = getThroughput(downloadTimeEnd, downloadTimeStart, server_message, t_current, alpha)
             print(f"Throughput: {t_current} bits/sec")
                 
             # foward the message to the client
