@@ -3,17 +3,7 @@ import threading
 from socket import *
 import sys
 import re
-import time
-
-def getManifestFile(serverSocket):
-    # Send a request to the server to get the manifest file
-    message = "GET /BigBuckBunny_6s.mpd HTTP/1.1"
-    sendMessage(message, serverSocket)
-        
-    # Receive messages from server and forward to client
-    server_message, server_header = receiveMessageServer(serverSocket)
-    print("Received manifest file")
-    
+import time    
 
 def getServerMessageChunkSize(server_message):
     decoded_server_message = server_message.decode('iso-8859-1')
@@ -74,6 +64,9 @@ def receiveMessageHeader(socket):
     
     # decode the headers
     headers_str = headers.decode('iso-8859-1')
+
+    if "6s_nolist.mpd" in headers_str:
+        headers_str = headers_str.replace("6s_nolist.mpd", "6s.mpd")
             
     return headers_str, remaining_body
 
@@ -109,8 +102,9 @@ def receiveMessageServer(socket):
             remaining -= len(chunk)
             
     # otherwise we have the full message
-    # if "application/dash+xml" in headers_str:
-    #     print(body.decode('iso-8859-1')) 
+    if "application/dash+xml" in headers_str:
+        print(body.decode('iso-8859-1'))
+        # we need to parse this and save the available bitrates 
         
     
     # Combine headers and body
