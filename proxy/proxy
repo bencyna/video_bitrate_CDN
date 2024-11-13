@@ -65,10 +65,14 @@ def receiveMessageHeader(socket):
     
     # decode the headers
     headers_str = headers.decode('iso-8859-1')
-    
+    requesting_manifest = False
+    if "6s_nolist.mpd" in headers_str:
+        requesting_manifest = True
+        headers_str.replace("6s_nolist.mpd", "6s.mpd")
+        
     print(headers_str)
     
-    return headers_str, remaining_body
+    return headers_str, remaining_body, requesting_manifest
 
 def getStringFromHeader(headers, string):
     match = re.search(string, headers, re.IGNORECASE)
@@ -82,7 +86,7 @@ def getContentLength(headers):
         return int(match.group(1))
     return None
 
-def receiveMessageServer(socket):
+def receiveMessageServer(socket, receiving_manifest = False):
     headers_str, initial_body = receiveMessageHeader(socket)
     
     # encode the headers 
@@ -102,6 +106,9 @@ def receiveMessageServer(socket):
             remaining -= len(chunk)
             
     # otherwise we have the full message
+    if receiving_manifest:
+        print("Received manifest")
+        print(body.decode())
   
     
     # Combine headers and body
@@ -122,7 +129,7 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
         t_current = 0 # intialise this to be the lowest possible bitrate for the pair
         while True:
             # Receive message from the client
-            header, _ = receiveMessageHeader(clientSocket)
+            header, _, requesting_manifest = receiveMessageHeader(clientSocket)
             if not header:
                 # Client closed connection
                 closeConnections(clientSocket, serverSocket)
@@ -132,7 +139,7 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
             sendMessage(header, serverSocket)
         
             # Receive messages from server and forward to client
-            server_message, server_header = receiveMessageServer(serverSocket)
+            server_message, server_header = receiveMessageServer(serverSocket, requesting_manifest)
             if not server_message:
                 break
               
