@@ -105,7 +105,9 @@ def receiveMessageServer(socket):
             
     # otherwise we have the full message
     print("Received message from server") 
-    print(headers_str)   
+    print(headers_str)  
+    if "application/dash+xml" in headers_str:
+        print(body.decode('iso-8859-1')) 
     
     # Combine headers and body
     full_response = response + body
