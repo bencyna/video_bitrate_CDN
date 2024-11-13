@@ -46,7 +46,7 @@ Accept-Language: en-US,en;q=0.9\r\n\
       
     
     print("parsed bitrates")
-    return parse_bandwidths(server_message)
+    return parse_bandwidths(server_message.decode('utf-8'))
       
     
     
