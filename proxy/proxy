@@ -98,9 +98,6 @@ def receiveMessageHeader(socket):
     
     # decode the headers
     headers_str = headers.decode('iso-8859-1')
-
-    if "6s_nolist.mpd" in headers_str:
-        headers_str = headers_str.replace("6s_nolist.mpd", "6s.mpd")
             
     return headers_str, remaining_body
 
@@ -162,7 +159,7 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
                 # Client closed connection
                 closeConnections(clientSocket, serverSocket)
             print(header)
-            if "application/dash+xml" in header:
+            if "BigBuckBunny_6s.mpd" in header:
                 print("app in header, getting bitrates")
                 bitrates = getBitrates(serverSocket) # get the full mainfest file and return the bitrates
                 
