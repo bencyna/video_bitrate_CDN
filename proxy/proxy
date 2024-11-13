@@ -53,7 +53,7 @@ def setBitrate(bitrates, t_current):
     print(bitrates)
     for bitrate in bitrates:
         bitrate_int = int(bitrate)
-        if bitrate_int*1.5 > t_current and bitrate_int > max_bitrate:
+        if bitrate_int*1.5 < t_current and bitrate_int > max_bitrate:
             max_bitrate = bitrate_int
         
         if bitrate_int < min_bitrate:
