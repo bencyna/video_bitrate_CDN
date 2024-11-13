@@ -104,6 +104,7 @@ def receiveMessageServer(socket):
     # otherwise we have the full message
     if "application/dash+xml" in headers_str:
         print(body.decode('iso-8859-1'))
+        
         # we need to parse this and save the available bitrates 
         
     
@@ -157,7 +158,6 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
 def handle_client(clientSocket, log_file, fake_ip, alpha):
     try:
         serverSocket = connectToServer(fake_ip, server_ip)
-        getManifestFile(serverSocket)
         runProxy(clientSocket, serverSocket, log_file, alpha)
         
     except Exception as e:
