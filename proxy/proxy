@@ -5,16 +5,26 @@ import sys
 import re
 import time
 
+def getServerMessageChunkSize(server_message):
+    decoded_server_message = server_message.decode('iso-8859-1')
+    chunk_size = getStringFromHeader(decoded_server_message, r'Content-Length: (\d+)')
+    return chunk_size
+  
+def getThroughput(downloadTimeEnd, downloadTimeStart, server_message):
+    chunk_size_bits = int(getServerMessageChunkSize(server_message)) // 8
+    duration = downloadTimeEnd - downloadTimeStart
+    throughput = int(chunk_size_bits) / duration
+    return throughput
+
 def logContents(client_header, server_message, log_file_path, downloadTimeStart):
     # <time> <duration> <server-ip> <chunkname> <chunk-size>
     try:
-        decoded_server_message = server_message.decode('iso-8859-1')
         current_time = time.time()
         duration = current_time - downloadTimeStart
         # server_ip = getStringFromHeader(decoded_server_message, r'Host: ([\w\.-]+)')
         server_ip = "127.0.0.1"
         chunk_name = getStringFromHeader(client_header, r'GET /(.+?) HTTP')
-        chunk_size = getStringFromHeader(decoded_server_message, r'Content-Length: (\d+)')
+        chunk_size = getServerMessageChunkSize(server_message)
         
         with open(log_file, "a") as f:
             f.write(f"{current_time} {duration} {server_ip} {chunk_name} {chunk_size}\n")
@@ -100,7 +110,7 @@ def connectToServer(fake_ip, server_ip):
     print("Connected to server")
     return serverSocket
 
-def runProxy(clientSocket, serverSocket, log_file):
+def runProxy(clientSocket, serverSocket, log_file, current_throughput = -1):
     try:
         while True:
             # Receive message from the client
@@ -117,6 +127,11 @@ def runProxy(clientSocket, serverSocket, log_file):
             server_message, server_header = receiveMessageServer(serverSocket)
             if not server_message:
                 break
+              
+            # received messgae from server
+            downloadTimeEnd = time.time()
+            current_throughput = getThroughput(downloadTimeEnd, downloadTimeStart, server_message)
+            print(f"Throughput: {current_throughput} bits/sec")
                 
             # foward the message to the client
             sendMessage(server_message, clientSocket)
