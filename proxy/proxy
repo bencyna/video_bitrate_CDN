@@ -5,6 +5,16 @@ import sys
 import re
 import time
 
+def getManifestFile(serverSocket):
+    # Send a request to the server to get the manifest file
+    message = "GET /BigBuckBunny_6s.mpd HTTP/1.1"
+    sendMessage(message, serverSocket)
+        
+    # Receive messages from server and forward to client
+    server_message, server_header = receiveMessageServer(serverSocket)
+    print("Received manifest file")
+    
+
 def getServerMessageChunkSize(server_message):
     decoded_server_message = server_message.decode('iso-8859-1')
     chunk_size = getStringFromHeader(decoded_server_message, r'Content-Length: (\d+)')
@@ -16,7 +26,6 @@ def getThroughput(downloadTimeEnd, downloadTimeStart, server_message, t_old, alp
     new_throughput = int(chunk_size_bits) / duration
     t_current = alpha * new_throughput + (1 - alpha) * t_old
     return t_current
-
 
 def logContents(client_header, server_message, log_file_path, downloadTimeStart):
     # <time> <duration> <server-ip> <chunkname> <chunk-size>
@@ -65,11 +74,7 @@ def receiveMessageHeader(socket):
     
     # decode the headers
     headers_str = headers.decode('iso-8859-1')
-    if "6s_nolist.mpd" in headers_str:
-        headers_str = headers_str.replace("6s_nolist.mpd", "6s.mpd")
-    
-    print(headers_str)
-        
+            
     return headers_str, remaining_body
 
 def getStringFromHeader(headers, string):
@@ -104,10 +109,9 @@ def receiveMessageServer(socket):
             remaining -= len(chunk)
             
     # otherwise we have the full message
-    print("Received message from server") 
-    print(headers_str)  
-    if "application/dash+xml" in headers_str:
-        print(body.decode('iso-8859-1')) 
+    # if "application/dash+xml" in headers_str:
+    #     print(body.decode('iso-8859-1')) 
+        
     
     # Combine headers and body
     full_response = response + body
@@ -159,6 +163,7 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
 def handle_client(clientSocket, log_file, fake_ip, alpha):
     try:
         serverSocket = connectToServer(fake_ip, server_ip)
+        getManifestFile(serverSocket)
         runProxy(clientSocket, serverSocket, log_file, alpha)
         
     except Exception as e:
