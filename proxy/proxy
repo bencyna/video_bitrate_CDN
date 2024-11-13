@@ -5,6 +5,24 @@ import sys
 import re
 import time    
 
+def getBitrates(serverSocket):
+    # get the manifest file from the server
+    # parse the manifest file to get the bitrates
+    # return the bitrates
+    header = ''
+    sendMessage(header, serverSocket)
+        
+    # Receive messages from server and forward to client
+    server_message, server_header, xml = receiveMessageServer(serverSocket)
+    if not server_message:
+        return []
+    
+    
+
+def setBitrate(bitrates, t_current):
+    # set the bitrate to the highest bitrate that is less than the current throughput
+    pass
+
 def getServerMessageChunkSize(server_message):
     decoded_server_message = server_message.decode('iso-8859-1')
     chunk_size = getStringFromHeader(decoded_server_message, r'Content-Length: (\d+)')
@@ -100,13 +118,9 @@ def receiveMessageServer(socket):
                 break
             body += chunk
             remaining -= len(chunk)
-            
-    # otherwise we have the full message
-    if "application/dash+xml" in headers_str:
-        print(body.decode('iso-8859-1'))
-        
-        # we need to parse this and save the available bitrates 
-        
+    
+   
+    # otherwise we have the full messag
     
     # Combine headers and body
     full_response = response + body
@@ -122,29 +136,36 @@ def connectToServer(fake_ip, server_ip):
 
 def runProxy(clientSocket, serverSocket, log_file, alpha):
     try:
+        bitrates = []
         # t_current = lowest av bitrate for client server pair
         t_current = 0 # intialise this to be the lowest possible bitrate for the pair
         while True:
             # Receive message from the client
-            header, _ = receiveMessageHeader(clientSocket)
+            header, body = receiveMessageHeader(clientSocket)
             if not header:
                 # Client closed connection
                 closeConnections(clientSocket, serverSocket)
+            print(header)
+            # if "application/dash+xml" in header:
+            #     bitrates = getBitrates(serverSocket) # get the full mainfest file and return the bitrates
+                
                 
             # Forward message to server
             downloadTimeStart = time.time()
             sendMessage(header, serverSocket)
         
             # Receive messages from server and forward to client
-            server_message, server_header = receiveMessageServer(serverSocket)
+            server_message, server_header, xml = receiveMessageServer(serverSocket)
             if not server_message:
                 break
-              
+            
             # received messgae from server, calculate throughput
             downloadTimeEnd = time.time()
             t_current = getThroughput(downloadTimeEnd, downloadTimeStart, server_message, t_current, alpha)
+            
             print(f"Throughput: {t_current} bits/sec")
                 
+            setBitrate(bitraes, t_current)
             # foward the message to the client
             sendMessage(server_message, clientSocket)
             logContents(header, server_header, log_file, downloadTimeStart)
