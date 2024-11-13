@@ -5,6 +5,19 @@ import sys
 import re
 import time    
 
+
+def parse_bandwidths(server_message):
+    bitrates = []
+    
+    parts = server_message.split('bandwidth="')
+    
+    for part in parts[1:]:
+        bitrate = part.split('"')[0]
+        bitrates.append(bitrate)
+    
+    return bitrates
+  
+  
 def getBitrates(serverSocket):
     # get the manifest file from the server
     # parse the manifest file to get the bitrates
@@ -28,9 +41,12 @@ Accept-Language: en-US,en;q=0.9\r\n\
         
     # Receive messages from server and forward to client
     server_message, server_header = receiveMessageServer(serverSocket)
-    print(server_message)
     if not server_message:
-        return 
+        return []
+      
+    
+    print("parsed bitrates")
+    return parse_bandwidths(server_message)
       
     
     
