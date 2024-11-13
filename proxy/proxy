@@ -9,11 +9,27 @@ def getBitrates(serverSocket):
     # get the manifest file from the server
     # parse the manifest file to get the bitrates
     # return the bitrates
-    header = ''
+    header = '''GET /BigBuckBunny_6s.mpd HTTP/1.1\r\n\
+Host: localhost:50048\r\n\
+Connection: keep-alive\r\n\
+sec-ch-ua: "Not/A)Brand";v="99", "Google Chrome";v="115", "Chromium";v="115"\r\n\
+sec-ch-ua-mobile: ?0\r\n\
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36\r\n\
+sec-ch-ua-platform: "Linux"\r\n\
+Accept: */*\r\n\
+Sec-Fetch-Site: same-origin\r\n\
+Sec-Fetch-Mode: cors\r\n\
+Sec-Fetch-Dest: empty\r\n\
+Referer: http://localhost:50048/\r\n\
+Accept-Encoding: gzip, deflate, br\r\n\
+Accept-Language: en-US,en;q=0.9\r\n\
+\r\n'''
     sendMessage(header, serverSocket)
         
     # Receive messages from server and forward to client
-    server_message, server_header, xml = receiveMessageServer(serverSocket)
+    server_message, server_header = receiveMessageServer(serverSocket)
+    print("got_bitrates")
+    print(server_message)
     if not server_message:
         return []
     
@@ -145,9 +161,9 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
             if not header:
                 # Client closed connection
                 closeConnections(clientSocket, serverSocket)
-            print(header)
-            # if "application/dash+xml" in header:
-            #     bitrates = getBitrates(serverSocket) # get the full mainfest file and return the bitrates
+
+            if "application/dash+xml" in header:
+                bitrates = getBitrates(serverSocket) # get the full mainfest file and return the bitrates
                 
                 
             # Forward message to server
