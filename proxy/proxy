@@ -104,8 +104,6 @@ def receiveMessageServer(socket):
             remaining -= len(chunk)
             
     # otherwise we have the full message
-    print("Received message from server")
-    print(body.decode('iso-8859-1'))  
     
     # Combine headers and body
     full_response = response + body
