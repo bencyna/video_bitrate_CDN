@@ -63,7 +63,7 @@ def receiveMessageHeader(socket):
     headers = buffer[:header_end]
     remaining_body = buffer[header_end:]
     
-    print(remaining_body.decode('iso-8859-1'))
+    print(remaining_body.decode('utf-8'))
     
     # decode the headers
     headers_str = headers.decode('iso-8859-1')
