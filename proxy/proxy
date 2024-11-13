@@ -5,7 +5,6 @@ import sys
 import re
 import time    
 
-
 def parse_bandwidths(server_message):
     bitrates = []
     
@@ -60,8 +59,6 @@ def setBitrate(bitrates, t_current):
             min_bitrate = bitrate_int
             
     return max_bitrate if max_bitrate != 0 else min(min_bitrate, int(bitrates[0]))
-            
-        
         
 def getServerMessageChunkSize(server_message):
     decoded_server_message = server_message.decode('iso-8859-1')
@@ -175,13 +172,16 @@ def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates):
     try:
         # t_current = lowest av bitrate for client server pair
         t_current = 0 # intialise this to be the lowest possible bitrate for the pair
+        bitrate = setBitrate(bitrates, t_current)
         while True:
             # Receive message from the client
             header, body = receiveMessageHeader(clientSocket)
             if not header:
                 # Client closed connection
                 closeConnections(clientSocket, serverSocket)
-                
+            
+            header = re.sub(r'1006743', f'{bitrate}', header)
+
             # Forward message to server
             downloadTimeStart = time.time()
             sendMessage(header, serverSocket)
@@ -198,7 +198,6 @@ def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates):
             print(f"Throughput: {t_current} bits/sec")
                 
             bitrate = setBitrate(bitrates, t_current)
-            print("setting bitrate to: ", bitrate)
             # foward the message to the client
             sendMessage(server_message, clientSocket)
             logContents(header, server_header, log_file, downloadTimeStart)
