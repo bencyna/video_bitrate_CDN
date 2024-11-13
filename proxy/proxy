@@ -28,10 +28,11 @@ Accept-Language: en-US,en;q=0.9\r\n\
         
     # Receive messages from server and forward to client
     server_message, server_header = receiveMessageServer(serverSocket)
-    print("got_bitrates")
     print(server_message)
     if not server_message:
-        return []
+        return 
+      
+    
     
     
 
@@ -147,9 +148,8 @@ def connectToServer(fake_ip, server_ip):
     return serverSocket
 
 
-def runProxy(clientSocket, serverSocket, log_file, alpha):
+def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates):
     try:
-        bitrates = []
         # t_current = lowest av bitrate for client server pair
         t_current = 0 # intialise this to be the lowest possible bitrate for the pair
         while True:
@@ -158,10 +158,6 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
             if not header:
                 # Client closed connection
                 closeConnections(clientSocket, serverSocket)
-            if "BigBuckBunny_6s_nolist.mpd" in header:
-                print("app in header, getting bitrates")
-                bitrates = getBitrates(serverSocket) # get the full mainfest file and return the bitrates
-                
                 
             # Forward message to server
             downloadTimeStart = time.time()
@@ -192,7 +188,8 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
 def handle_client(clientSocket, log_file, fake_ip, alpha):
     try:
         serverSocket = connectToServer(fake_ip, server_ip)
-        runProxy(clientSocket, serverSocket, log_file, alpha)
+        bitrates = getBitrates(serverSocket)
+        runProxy(clientSocket, serverSocket, log_file, alpha, bitrates)
         
     except Exception as e:
         print(f"Error handling client: {e}")
