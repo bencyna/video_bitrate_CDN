@@ -155,7 +155,7 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
             sendMessage(header, serverSocket)
         
             # Receive messages from server and forward to client
-            server_message, server_header, xml = receiveMessageServer(serverSocket)
+            server_message, server_header = receiveMessageServer(serverSocket)
             if not server_message:
                 break
             
@@ -165,7 +165,7 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
             
             print(f"Throughput: {t_current} bits/sec")
                 
-            setBitrate(bitraes, t_current)
+            setBitrate(bitrates, t_current)
             # foward the message to the client
             sendMessage(server_message, clientSocket)
             logContents(header, server_header, log_file, downloadTimeStart)
