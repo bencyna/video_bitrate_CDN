@@ -9,6 +9,7 @@ def getBitrates(serverSocket, old_bitrates):
     # get the manifest file from the server
     # parse the manifest file to get the bitrates
     # return the bitrates
+    print("about to get bitrates")
     header = '''GET /BigBuckBunny_6s.mpd HTTP/1.1\r\n\
     Host: localhost:50048\r\n\
     Connection: keep-alive\r\n\
@@ -25,7 +26,7 @@ def getBitrates(serverSocket, old_bitrates):
     Accept-Language: en-US,en;q=0.9\r\n\
     \r\n'''
     sendMessage(header, serverSocket)
-        
+    print("just sent get request for bitrates to server")
     # Receive messages from server and forward to client
     server_message, server_header = receiveMessageServer(serverSocket)
     if not server_message:
@@ -175,6 +176,7 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
         current_bitrate = None
         while True:
             header, body = receiveMessageHeader(clientSocket)
+            print("receving message from client")
             if not header:
                 closeConnections(clientSocket, serverSocket)
                 
@@ -185,7 +187,9 @@ def runProxy(clientSocket, serverSocket, log_file, alpha):
                 
             # Forward message to server
             downloadTimeStart = time.time()
+            print("about to message the server")
             sendMessage(header, serverSocket)
+            
         
             # Receive messages from server and forward to client
             server_message, server_header = receiveMessageServer(serverSocket)
