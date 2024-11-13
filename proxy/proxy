@@ -43,7 +43,6 @@ Accept-Language: en-US,en;q=0.9\r\n\
     server_message, server_header = receiveMessageServer(serverSocket)
     if not server_message:
         return []
-      
     
     print("parsed bitrates")
     return parse_bandwidths(server_message.decode('utf-8'))
@@ -165,6 +164,7 @@ def connectToServer(fake_ip, server_ip):
 
 
 def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates):
+    print(bitrates)
     try:
         # t_current = lowest av bitrate for client server pair
         t_current = 0 # intialise this to be the lowest possible bitrate for the pair
