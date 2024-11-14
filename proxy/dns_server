@@ -27,10 +27,10 @@ if __name__ == "__main__":
     try:
         while True:
             data, client_address = server_socket.recvfrom(512)
-            print(f"Received message from {client_address}: {data.decode()}")
+            print(f"Received message from {client_address}: {data}")
 
             response = "Message received!"
-            server_socket.sendto(response.encode(), client_address)
+            server_socket.sendto(response, client_address)
             
     except KeyboardInterrupt:
         print("\nServer is shutting down.")
