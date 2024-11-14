@@ -6,6 +6,8 @@ from socket import *
 
 import struct
 
+import struct
+
 def create_dns_response(query_data, ip_address="192.0.2.1"):
     # Parse the transaction ID from the query (first 2 bytes)
     transaction_id = query_data[:2]
@@ -32,7 +34,7 @@ def create_dns_response(query_data, ip_address="192.0.2.1"):
     # Answer Section
     # Name: Pointer to the domain name in the question section (0xC00C means offset 12)
     name = struct.pack("!H", 0xC00C)
-    
+
     # Type: A (IPv4 address)
     type_ = struct.pack("!H", 1)
     
