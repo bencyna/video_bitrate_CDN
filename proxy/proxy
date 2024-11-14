@@ -209,7 +209,7 @@ def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip):
     finally:
         closeConnections(clientSocket, serverSocket)
 
-def handle_client(clientSocket, log_file, fake_ip, alpha):
+def handle_client(clientSocket, log_file, fake_ip, alpha, server_ip):
     try:
         serverSocket = connectToServer(fake_ip, server_ip)
         bitrates = getBitrates(serverSocket)
@@ -244,7 +244,7 @@ if __name__ == "__main__":
         while True:
             client_socket, client_address = proxySocket.accept()
             print(f"Client connected, starting thread")
-            threading.Thread(target=handle_client, args=(client_socket, log_file, fake_ip, alpha)).start()
+            threading.Thread(target=handle_client, args=(client_socket, log_file, fake_ip, alpha, server_ip)).start()
     except KeyboardInterrupt:
         print("\nShutting down proxy server...")
     finally:
