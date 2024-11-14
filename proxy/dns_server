@@ -1,0 +1,39 @@
+import sys
+from socket import *
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 5:
+        print("Usage: python3", sys.argv[0], "<topo-dir>", "log", "<listen-port>", "decision-method>")
+        sys.exit()
+        
+    topo_dir = str(sys.argv[1])
+    log_file = str(sys.argv[2])
+    listen_port = int(sys.argv[3])
+    decision_method = str(sys.argv[4])
+    ip_addr = "5.0.0.1"
+    
+    with open(topo_dir, "r") as file:
+        ip_addr = file.read()
+    
+    
+    print("topo_dir:", topo_dir, "log_file:", log_file, "listen_port:", listen_port, "decision_method:", decision_method, "ip-addr:", ip_addr)
+    
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server_socket.bind((ip_addr, listen_port))
+    
+    try:
+        while True:
+            data, client_address = server_socket.recvfrom(512)
+            print(f"Received message from {client_address}: {data.decode()}")
+
+            response = "Message received!"
+            server_socket.sendto(response.encode(), client_address)
+            
+    except KeyboardInterrupt:
+        print("\nServer is shutting down.")
+    finally:
+        server_socket.close()
+
+    
+      

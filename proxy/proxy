@@ -49,7 +49,6 @@ def setBitrate(bitrates, t_current):
     # set the bitrate to the highest bitrate that is less than the current throughput
     max_bitrate = 0
     min_bitrate = 10**10
-    print(bitrates)
     for bitrate in bitrates:
         bitrate_int = int(bitrate)
         if bitrate_int*1.5 < t_current and bitrate_int > max_bitrate:
@@ -167,7 +166,6 @@ def connectToServer(fake_ip, server_ip):
     print("Connected to server")
     return serverSocket
 
-
 def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates):
     try:
         # t_current = lowest av bitrate for client server pair
@@ -206,7 +204,6 @@ def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates):
         print(f"Error in proxy: {e}")
     finally:
         closeConnections(clientSocket, serverSocket)
-
 
 def handle_client(clientSocket, log_file, fake_ip, alpha):
     try:
