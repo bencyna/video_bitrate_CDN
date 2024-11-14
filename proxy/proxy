@@ -82,7 +82,7 @@ def logContents(client_header, server_message, log_file_path, downloadTimeStart,
         chunk_size = getServerMessageChunkSize(server_message)
         
         with open(log_file, "a") as f:
-            f.write(f"{current_time} {duration} {tput} {avg_tput} {chunk_bitrate} {server_ip} /{chunk_name}\n")
+            f.write(f"{current_time} {duration} {tput} {avg_tput} {chunk_bitrate/1000} {server_ip} /{chunk_name}\n")
             f.close()
     except Exception as e: 
         print("Error logging contents:", e)
