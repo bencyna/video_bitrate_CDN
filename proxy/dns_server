@@ -22,7 +22,7 @@ if __name__ == "__main__":
         
     server_ip_responses = []
     with open(topo_servers, "r") as file:
-        server_ip_responses = file.read().split(" ")
+        server_ip_responses = file.read().split("\n")
     
     print(server_ip_responses, ip_addr)
     
