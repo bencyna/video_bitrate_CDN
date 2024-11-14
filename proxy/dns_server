@@ -22,7 +22,7 @@ if __name__ == "__main__":
     print("topo_dir:", topo_dir, "log_file:", log_file, "listen_port:", listen_port, "decision_method:", decision_method, "ip-addr:", ip_addr)
     
     server_socket = socket(AF_INET, SOCK_DGRAM)
-    server_socket.bind(('5.0.0.0', 53))
+    server_socket.bind(('5.0.0.1', 53))
     
     try:
         while True:
