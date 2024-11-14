@@ -14,10 +14,17 @@ if __name__ == "__main__":
     listen_port = int(sys.argv[3])
     decision_method = str(sys.argv[4])
     ip_addr = "5.0.0.1"
+    topo_dns_file = topo_dir + '/topo' + topo_dir[-1] + ".dns"
+    topo_servers = topo_dir + '/topo' + topo_dir[-1] + ".servers"
     
-    with open(topo_dir, "r") as file:
+    with open(topo_dns_file, "r") as file:
         ip_addr = file.read().strip()
+        
+    server_ip_responses = []
+    with open(topo_servers, "r") as file:
+        server_ip_responses = file.read().split(" ")
     
+    print(server_ip_responses, ip_addr)
     
     print("topo_dir:", topo_dir, "log_file:", log_file, "listen_port:", listen_port, "decision_method:", decision_method, "ip-addr:", ip_addr)
     
@@ -30,7 +37,7 @@ if __name__ == "__main__":
             print(f"Received message from {client_address}: {data}")
 
             response = "Message received!"
-            server_socket.sendto(response, client_address)
+            server_socket.sendto(response.encode(), client_address)
             
     except KeyboardInterrupt:
         print("\nServer is shutting down.")
