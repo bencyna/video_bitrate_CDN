@@ -71,18 +71,18 @@ def getThroughput(downloadTimeEnd, downloadTimeStart, server_message, t_old, alp
     t_current = alpha * new_throughput + (1 - alpha) * t_old
     return t_current
 
-def logContents(client_header, server_message, log_file_path, downloadTimeStart):
-    # <time> <duration> <server-ip> <chunkname> <chunk-size>
+def logContents(client_header, server_message, log_file_path, downloadTimeStart, tput, avg_tput, chunk_bitrate, server_ip):
+    # <time> <duration> <tput> <avg-tput> <chunk-bitrate> <server-ip> <chunkname>
+
     try:
         current_time = time.time()
         duration = current_time - downloadTimeStart
         # server_ip = getStringFromHeader(decoded_server_message, r'Host: ([\w\.-]+)')
-        server_ip = "3.0.0.1"
         chunk_name = getStringFromHeader(client_header, r'GET /(.+?) HTTP')
         chunk_size = getServerMessageChunkSize(server_message)
         
         with open(log_file, "a") as f:
-            f.write(f"{current_time} {duration} {server_ip} /{chunk_name} {chunk_size}\n")
+            f.write(f"{current_time} {duration} {tput} {avg_tput} {chunk_bitrate} {server_ip} /{chunk_name}\n")
             f.close()
     except Exception as e: 
         print("Error logging contents:", e)
@@ -166,9 +166,11 @@ def connectToServer(fake_ip, server_ip):
     print("Connected to server")
     return serverSocket
 
-def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates):
+def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip):
     try:
         # t_current = lowest av bitrate for client server pair
+        throughput_count = 0
+        throughput_total = 0
         t_current = 0 # intialise this to be the lowest possible bitrate for the pair
         bitrate = setBitrate(bitrates, t_current)
         while True:
@@ -192,13 +194,15 @@ def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates):
             # received messgae from server, calculate throughput
             downloadTimeEnd = time.time()
             t_current = getThroughput(downloadTimeEnd, downloadTimeStart, server_message, t_current, alpha)
+            throughput_total += t_current
+            throughput_count += 1
             
             print(f"Throughput: {t_current} bits/sec")
                 
             bitrate = setBitrate(bitrates, t_current)
             # foward the message to the client
             sendMessage(server_message, clientSocket)
-            logContents(header, server_header, log_file, downloadTimeStart)
+            logContents(header, server_header, log_file, downloadTimeStart, t_current, throughput_total / throughput_count, bitrate, server_ip)
             
     except Exception as e:
         print(f"Error in proxy: {e}")
@@ -209,7 +213,7 @@ def handle_client(clientSocket, log_file, fake_ip, alpha):
     try:
         serverSocket = connectToServer(fake_ip, server_ip)
         bitrates = getBitrates(serverSocket)
-        runProxy(clientSocket, serverSocket, log_file, alpha, bitrates)
+        runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip)
         
     except Exception as e:
         print(f"Error handling client: {e}")
