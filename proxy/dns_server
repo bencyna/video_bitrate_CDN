@@ -3,6 +3,48 @@
 import sys
 from socket import *
 
+import struct
+
+def parse_dns_query(data):
+    # DNS Header is the first 12 bytes
+    transaction_id, flags, qdcount, ancount, nscount, arcount = struct.unpack("!6H", data[:12])
+
+    # Print the header info
+    print(f"Transaction ID: {transaction_id}")
+    print(f"Flags: {flags}")
+    print(f"Questions: {qdcount}, Answer RRs: {ancount}, Authority RRs: {nscount}, Additional RRs: {arcount}")
+
+    # Parsing the Question Section
+    question_offset = 12
+    domain_name = []
+    while True:
+        length = data[question_offset]
+        if length == 0:
+            question_offset += 1
+            break
+        domain_name.append(data[question_offset + 1: question_offset + 1 + length].decode())
+        question_offset += length + 1
+
+    domain_name = ".".join(domain_name)
+    print(f"Domain Name: {domain_name}")
+
+    # Extract query type and class (next 4 bytes after domain name)
+    qtype, qclass = struct.unpack("!2H", data[question_offset:question_offset + 4])
+    print(f"Query Type: {qtype}, Query Class: {qclass}")
+
+    return {
+        "transaction_id": transaction_id,
+        "flags": flags,
+        "qdcount": qdcount,
+        "ancount": ancount,
+        "nscount": nscount,
+        "arcount": arcount,
+        "domain_name": domain_name,
+        "query_type": qtype,
+        "query_class": qclass
+    }
+
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
@@ -24,8 +66,6 @@ if __name__ == "__main__":
     with open(topo_servers, "r") as file:
         server_ip_responses = [x for x in file.read().split("\n") if x]
     
-    print(server_ip_responses, ip_addr)
-    
     print("topo_dir:", topo_dir, "log_file:", log_file, "listen_port:", listen_port, "decision_method:", decision_method, "ip-addr:", ip_addr)
     
     server_socket = socket(AF_INET, SOCK_DGRAM)
@@ -35,7 +75,7 @@ if __name__ == "__main__":
         while True:
             data, client_address = server_socket.recvfrom(512)
             print(f"Received message from {client_address}: {data}")
-
+            parse_dns_query(data)
             response = "Message received!"
             server_socket.sendto(response.encode(), client_address)
             
