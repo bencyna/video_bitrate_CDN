@@ -18,8 +18,8 @@ def create_dns_response(data, ip_address):
     authority = b'\x00\x00' 
     additional = b'\x00\x00' 
     
-    print(domain_name)
-    # flags = flags[:1] + bytes([(flags[1] & 0xF0) | (rcode & 0x0F)])
+    if domain_name != "video.columbia.edu":    
+        flags = flags[:1] + bytes([(flags[1] & 0xF0) | (3 & 0x0F)])
     
     header = id + flags + questions + answers + authority + additional
 
