@@ -5,6 +5,7 @@ import sys
 import re
 import time    
 import struct
+import traceback
 
 def parse_dns_response(data):
     domain_start = 12  
@@ -267,6 +268,10 @@ def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip, d
             
     except Exception as e:
         print(f"Error in proxy: {e}")
+        tb = traceback.extract_tb(e.__traceback__)
+          # Extract the line number from the last frame in the traceback
+        line_number = tb[-1].lineno
+        print(f"An error occurred on line {line_number}: {e}")
     finally:
         closeConnections(clientSocket, serverSocket)
 
