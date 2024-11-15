@@ -218,15 +218,6 @@ def receiveMessageServer(socket):
     full_response = response + body
     return full_response, response
 
-def connectToServer(fake_ip, dns_server_port, dns_server_ip):
-    server_ip = getIpFromDNS(dns_server_port, dns_server_ip)
-    serverSocket = socket(AF_INET, SOCK_STREAM)
-    serverSocket.bind((fake_ip, 0))
-    serverSocket.connect((server_ip, 80))
-    print("Connected to server")
-    return serverSocket, server_ip
-
-# dns_server_port and ip are given here if I have time to implement period checking of dns server, unsued for now
 def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip, dns_server_port, dns_server_ip):
     try:
         throughput_count = 0
@@ -235,44 +226,56 @@ def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip, d
         bitrate = setBitrate(bitrates, t_current)
         
         while True:
-            # Only receive the next client message after handling the previous complete request-response cycle
+            # Receive message from the client
             header, body = receiveMessageHeader(clientSocket)
             if not header:
                 print("Client header is 0")
-                closeConnections(clientSocket, serverSocket)
-                return
+                # Don't close connections immediately if header is empty
+                continue
+            
+            # Ensure Connection: keep-alive is set
+            if 'Connection:' in header:
+                header = re.sub(r'Connection:.*\r\n', 'Connection: keep-alive\r\n', header)
+            else:
+                # Add keep-alive header if it doesn't exist
+                header = header.replace('\r\n\r\n', '\r\nConnection: keep-alive\r\n\r\n')
             
             header = re.sub(r'1006743', f'{bitrate}', header)
             print("client header", header)
             
-            # Forward message to server and wait for complete response
+            # Forward message to server
             downloadTimeStart = time.time()
             sendMessage(header, serverSocket)
-            
-            # Wait for and process server response completely before accepting next client message
+        
+            # Receive messages from server and forward to client
             server_message, server_header = receiveMessageServer(serverSocket)
             print("server header", server_header)
             if len(server_message) < 2:
-                closeConnections(clientSocket, serverSocket)
-                return 
+                continue  # Don't close connection, just continue waiting
             
-            # Calculate throughput after complete response
             downloadTimeEnd = time.time()
             t_current = getThroughput(downloadTimeEnd, downloadTimeStart, server_message, t_current, alpha)
             throughput_total += t_current
             throughput_count += 1
             
             print(f"Throughput: {t_current} bits/sec")
-            
-            # Update bitrate and forward response to client
+                
             bitrate = setBitrate(bitrates, t_current)
-            sendMessage(server_message, clientSocket)
             
-            # Log after complete cycle
+            # Modify server response to include keep-alive
+            if isinstance(server_message, bytes):
+                server_message = server_message.decode('iso-8859-1')
+            if 'Connection:' in server_message:
+                server_message = re.sub(r'Connection:.*\r\n', 'Connection: keep-alive\r\n', server_message)
+            else:
+                server_message = server_message.replace('\r\n\r\n', '\r\nConnection: keep-alive\r\n\r\n')
+            if isinstance(server_message, str):
+                server_message = server_message.encode('iso-8859-1')
+            
+            # Forward to client
+            sendMessage(server_message, clientSocket)
             logContents(header, server_header, log_file, downloadTimeStart, t_current, 
                        throughput_total / throughput_count, bitrate, server_ip)
-            
-            # Now the cycle is complete and we can process the next message
             
     except Exception as e:
         print(f"Error in proxy: {e}")
@@ -280,9 +283,29 @@ def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip, d
         line_number = tb[-1].lineno
         print(f"An error occurred on line {line_number}: {e}")
     finally:
-        closeConnections(clientSocket, serverSocket)
-        
-        
+        # Only close connections if there's an actual error
+        if e:
+            closeConnections(clientSocket, serverSocket)
+
+# Also modify the connectToServer function to set TCP keepalive
+def connectToServer(fake_ip, dns_server_port, dns_server_ip):
+    server_ip = getIpFromDNS(dns_server_port, dns_server_ip)
+    serverSocket = socket(AF_INET, SOCK_STREAM)
+    serverSocket.bind((fake_ip, 0))
+    
+    # Set TCP keepalive options
+    serverSocket.setsockopt(SOL_SOCKET, SO_KEEPALIVE, 1)
+    # Set TCP keepalive time (seconds)
+    # serverSocket.setsockopt(IPPROTO_TCP, TCP_KEEPIDLE, 60)
+    # Set TCP keepalive interval (seconds)
+    serverSocket.setsockopt(IPPROTO_TCP, TCP_KEEPINTVL, 60)
+    # Set TCP keepalive probe count
+    serverSocket.setsockopt(IPPROTO_TCP, TCP_KEEPCNT, 5)
+    
+    serverSocket.connect((server_ip, 80))
+    print("Connected to server")
+    return serverSocket, server_ip
+
 def handle_client(clientSocket, log_file, fake_ip, alpha, dns_server_port, dns_server_ip):
     try:
         serverSocket, server_ip = connectToServer(fake_ip, dns_server_port, dns_server_ip)
