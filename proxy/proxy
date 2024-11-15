@@ -117,6 +117,7 @@ def setBitrate(bitrates, t_current):
     return max_bitrate if max_bitrate != 0 else min(min_bitrate, int(bitrates[0]))
         
 def getServerMessageChunkSize(server_message):
+    print(server_message)
     decoded_server_message = server_message.decode('iso-8859-1')
     chunk_size = getStringFromHeader(decoded_server_message, r'Content-Length: (\d+)')
     return chunk_size
