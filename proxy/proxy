@@ -243,13 +243,14 @@ def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip, d
                 closeConnections(clientSocket, serverSocket)
             
             header = re.sub(r'1006743', f'{bitrate}', header)
-
+            print("client header", header)
             # Forward message to server
             downloadTimeStart = time.time()
             sendMessage(header, serverSocket)
         
             # Receive messages from server and forward to client
             server_message, server_header = receiveMessageServer(serverSocket)
+            print("server header", server_header)
             if len(server_message) < 2:
                 closeConnections(clientSocket, serverSocket)
                 return 
