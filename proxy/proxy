@@ -145,9 +145,11 @@ def logContents(client_header, server_message, log_file_path, downloadTimeStart,
         # print("Server message:", decoded_server_message)
         # print("header client message:", client_header)
 
-def closeConnections(clientSocket, serverSocket):
-    clientSocket.close()
-    serverSocket.close()
+def closeConnections(clientSocket=None, serverSocket=None):
+    if clientSocket:
+        clientSocket.close()
+    if serverSocket:
+        serverSocket.close()
     print("Closed connections")
     
 def sendMessage(message, socket):
@@ -275,7 +277,7 @@ def handle_client(clientSocket, log_file, fake_ip, alpha, dns_server_port, dns_s
         
     except Exception as e:
         print(f"Error handling client: {e}")
-        closeConnections(clientSocket, serverSocket)
+        closeConnections(clientSocket)
 
 if __name__ == "__main__":
     if len(sys.argv) != 7:
