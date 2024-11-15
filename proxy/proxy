@@ -117,8 +117,6 @@ def setBitrate(bitrates, t_current):
     return max_bitrate if max_bitrate != 0 else min(min_bitrate, int(bitrates[0]))
         
 def getServerMessageChunkSize(server_message):
-    print("getServerMessgae function call")
-    print(server_message, "server message")
     decoded_server_message = server_message.decode('iso-8859-1')
     chunk_size = getStringFromHeader(decoded_server_message, r'Content-Length: (\d+)')
     return chunk_size
@@ -252,8 +250,9 @@ def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip, d
         
             # Receive messages from server and forward to client
             server_message, server_header = receiveMessageServer(serverSocket)
-            if not server_message:
-                closeConnections(clientSocket, serverSocket)
+            if len(server_message) < 2:
+                continue
+                # closeConnections(clientSocket, serverSocket)
             
             # received messgae from server, calculate throughput
             downloadTimeEnd = time.time()
