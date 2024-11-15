@@ -9,45 +9,54 @@ import struct
 import struct
 
 def create_dns_response(data, ip_address):
+   # Parse the domain name from the query
     domain_name = parse_dns_query(data)
-    id = data[:2]
-    flags = b'\x81\x80'  
-    questions = b'\x00\x01'  
-    answers = b'\x00\x01'  
-    authority = b'\x00\x00' 
-    additional = b'\x00\x00' 
+    id = data[:2]  # Transaction ID
+    flags = b'\x81\x80'  # Standard response with no errors
+    questions = b'\x00\x01'  # One question
+    answers = b'\x00\x01'  # One answer
+    authority = b'\x00\x00'  # No authority records
+    additional = b'\x00\x00'  # No additional records
     header = id + flags + questions + answers + authority + additional
-    
+
+    # Encode domain name for question section
     domain = encode_domain_name(domain_name)
-
-    
-    q_type = b'\x00\x01'  
-    q_class = b'\x00\x01'  
-    ttl = b'\x00\x00\x00\x00'  # no caching
-    length = b'\x00\x04'  
-    addr = inet_aton(ip_address)
-    resource_section = ttl + length + addr
-    
+    q_type = b'\x00\x01'  # Type A (host address)
+    q_class = b'\x00\x01'  # Class IN (internet)
     question_section = domain + q_type + q_class
-    response = header + question_section + resource_section
 
-    response = header + question_section + resource_section
-    
+    # Answer section
+    answer_name = b'\xc0\x0c'  # Pointer to domain name in the question section
+    ttl = struct.pack('!I', 300)  # TTL set to 300 seconds
+    length = b'\x00\x04'  # IPv4 address length
+    addr = inet_aton(ip_address)  # Convert IP address to binary
+    answer_section = answer_name + q_type + q_class + ttl + length + addr
+
+    # Combine all parts into the final response
+    response = header + question_section + answer_section
+
     return response
-    
 
 def parse_dns_query(data):
-    domain_start = 12
-    domain_end = data.find(b'\x00', domain_start)
-    domain_name = data[domain_start:domain_end].decode('utf-8')
-    
-    return domain_name
-
+    domain_start = 12  # Queries start after the 12-byte header
+    domain_name = []
+    while True:
+        length = data[domain_start]
+        if length == 0:  # End of domain name
+            break
+        domain_start += 1
+        domain_name.append(data[domain_start:domain_start + length].decode('utf-8'))
+        domain_start += length
+    return '.'.join(domain_name)
 
 def encode_domain_name(domain_name):
     labels = domain_name.split('.')
-    encoded_name = b''.join(len(label).to_bytes(1, 'big') + label.encode() for label in labels)
-    return encoded_name + b'\x00'
+    encoded_name = b''
+    for label in labels:
+        encoded_name += bytes([len(label)]) + label.encode('utf-8')
+    return encoded_name + b'\x00'  # Null byte to terminate
+
+
 
 
 if __name__ == "__main__":
