@@ -218,40 +218,43 @@ def receiveMessageServer(socket):
     full_response = response + body
     return full_response, response
 
+def connectToServer(fake_ip, dns_server_port, dns_server_ip):
+    server_ip = getIpFromDNS(dns_server_port, dns_server_ip)
+    serverSocket = socket(AF_INET, SOCK_STREAM)
+    serverSocket.bind((fake_ip, 0))
+    serverSocket.connect((server_ip, 80))
+    print("Connected to server")
+    return serverSocket, server_ip
+
+# dns_server_port and ip are given here if I have time to implement period checking of dns server, unsued for now
 def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip, dns_server_port, dns_server_ip):
     try:
+        # t_current = lowest av bitrate for client server pair
         throughput_count = 0
         throughput_total = 0
-        t_current = 0
+        t_current = 0 # intialise this to be the lowest possible bitrate for the pair
         bitrate = setBitrate(bitrates, t_current)
-        
         while True:
             # Receive message from the client
             header, body = receiveMessageHeader(clientSocket)
             if not header:
-                # Don't close connections immediately if header is empty
-                continue
-            
-            # Ensure Connection: keep-alive is set
-            if 'Connection:' in header:
-                header = re.sub(r'Connection:.*\r\n', 'Connection: keep-alive\r\n', header)
-            else:
-                # Add keep-alive header if it doesn't exist
-                header = header.replace('\r\n\r\n', '\r\nConnection: keep-alive\r\n\r\n')
+                print("Client header is 0")
+                # Client closed connection
+                closeConnections(clientSocket, serverSocket)
+                return 
             
             header = re.sub(r'1006743', f'{bitrate}', header)
-            print("client header", header)
-            
             # Forward message to server
             downloadTimeStart = time.time()
             sendMessage(header, serverSocket)
         
             # Receive messages from server and forward to client
             server_message, server_header = receiveMessageServer(serverSocket)
-            print("server header", server_header)
             if len(server_message) < 2:
-                continue  # Don't close connection, just continue waiting
+                closeConnections(clientSocket, serverSocket)
+                return 
             
+            # received messgae from server, calculate throughput
             downloadTimeEnd = time.time()
             t_current = getThroughput(downloadTimeEnd, downloadTimeStart, server_message, t_current, alpha)
             throughput_total += t_current
@@ -260,50 +263,18 @@ def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip, d
             print(f"Throughput: {t_current} bits/sec")
                 
             bitrate = setBitrate(bitrates, t_current)
-            
-            # Modify server response to include keep-alive
-            if isinstance(server_message, bytes):
-                server_message = server_message.decode('iso-8859-1')
-            if 'Connection:' in server_message:
-                server_message = re.sub(r'Connection:.*\r\n', 'Connection: keep-alive\r\n', server_message)
-            else:
-                server_message = server_message.replace('\r\n\r\n', '\r\nConnection: keep-alive\r\n\r\n')
-            if isinstance(server_message, str):
-                server_message = server_message.encode('iso-8859-1')
-            
-            # Forward to client
+            # foward the message to the client
             sendMessage(server_message, clientSocket)
-            logContents(header, server_header, log_file, downloadTimeStart, t_current, 
-                       throughput_total / throughput_count, bitrate, server_ip)
+            logContents(header, server_header, log_file, downloadTimeStart, t_current, throughput_total / throughput_count, bitrate, server_ip)
             
     except Exception as e:
         print(f"Error in proxy: {e}")
         tb = traceback.extract_tb(e.__traceback__)
+          # Extract the line number from the last frame in the traceback
         line_number = tb[-1].lineno
         print(f"An error occurred on line {line_number}: {e}")
     finally:
-        # Only close connections if there's an actual error
-        if e:
-            closeConnections(clientSocket, serverSocket)
-
-# Also modify the connectToServer function to set TCP keepalive
-def connectToServer(fake_ip, dns_server_port, dns_server_ip):
-    server_ip = getIpFromDNS(dns_server_port, dns_server_ip)
-    serverSocket = socket(AF_INET, SOCK_STREAM)
-    serverSocket.bind((fake_ip, 0))
-    
-    # Set TCP keepalive options
-    serverSocket.setsockopt(SOL_SOCKET, SO_KEEPALIVE, 1)
-    # Set TCP keepalive time (seconds)
-    # serverSocket.setsockopt(IPPROTO_TCP, TCP_KEEPIDLE, 60)
-    # Set TCP keepalive interval (seconds)
-    serverSocket.setsockopt(IPPROTO_TCP, TCP_KEEPINTVL, 60)
-    # Set TCP keepalive probe count
-    serverSocket.setsockopt(IPPROTO_TCP, TCP_KEEPCNT, 5)
-    
-    serverSocket.connect((server_ip, 80))
-    print("Connected to server")
-    return serverSocket, server_ip
+        closeConnections(clientSocket, serverSocket)
 
 def handle_client(clientSocket, log_file, fake_ip, alpha, dns_server_port, dns_server_ip):
     try:
