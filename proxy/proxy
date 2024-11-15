@@ -16,7 +16,7 @@ def parse_dns_response(data):
         domain_start += 1
         domain_name.append(data[domain_start:domain_start + length].decode('utf-8'))
         domain_start += length
-        
+    print("paresed domain name: ", '.'.join(domain_name))
     return '.'.join(domain_name)
 
 def encode_domain_name(domain_name):
@@ -48,7 +48,8 @@ def getIpFromDNS(dns_server_port, dns_server_ip):
     dns_server = socket(AF_INET, SOCK_STREAM)
     dns_server.connect(('localhost', dns_server_port))
     dns_server.sendall(construct_dns_request('video.cs.cmu.edu'))
-    response = dns_server.recv(514).decode('utf-8')
+    response = dns_server.recv(512)
+    print("recieved response from dns: ", response)
     ip_address = parse_dns_response(response)
     return ip_address
 
@@ -285,7 +286,8 @@ if __name__ == "__main__":
         dns_server_ip = file.read().strip()
         
     server_ip = getIpFromDNS(dns_server_port, dns_server_ip)
-
+    print("returned server ip:", server_ip)
+    
     proxySocket = socket(AF_INET, SOCK_STREAM)
     proxySocket.bind(("", listen_port))
     proxySocket.listen(5)
