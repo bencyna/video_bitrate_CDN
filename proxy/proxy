@@ -54,9 +54,8 @@ def construct_dns_request(domain_name):
 
 def getIpFromDNS(dns_server_port, dns_server_ip):
     dns_server = socket(AF_INET, SOCK_DGRAM)
-    print(dns_server_ip, dns_server_port)
     dns_server.connect((dns_server_ip, dns_server_port))
-    dns_server.sendall(construct_dns_request('video.cs.cmu.edu'))
+    dns_server.sendall(construct_dns_request('video.columbia.edu'))
     response = dns_server.recv(512)
     print("recieved response from dns: ", response)
     ip_address = parse_dns_response(response)
