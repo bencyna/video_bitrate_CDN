@@ -4,10 +4,6 @@ import struct
 import sys
 from socket import *
 
-import struct
-
-import struct
-
 # Resources used for this https://implement-dns.wizardzines.com/book/part_2, https://www.youtube.com/watch?v=zDvPT1shDFg and https://mislove.org/teaching/cs4700/spring11/handouts/project1-primer.pdf
 def create_dns_response(data, ip_address):
     domain_name = parse_dns_query(data)

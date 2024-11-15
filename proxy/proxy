@@ -4,6 +4,53 @@ from socket import *
 import sys
 import re
 import time    
+import struct
+
+def parse_dns_response(data):
+    domain_start = 12 
+    domain_name = []
+    while True:
+        length = data[domain_start]
+        if length == 0: 
+            break
+        domain_start += 1
+        domain_name.append(data[domain_start:domain_start + length].decode('utf-8'))
+        domain_start += length
+        
+    return '.'.join(domain_name)
+
+def encode_domain_name(domain_name):
+    labels = domain_name.split('.')
+    encoded_name = b''
+    for label in labels:
+        encoded_name += bytes([len(label)]) + label.encode('utf-8')
+    return encoded_name + b'\x00' 
+
+def construct_dns_request(domain_name):
+    # header
+    id = 1234
+    flags = 0x0100
+    questions = 1
+    answers = 0
+    authority = 0
+    additional = 0
+    header = struct.pack('!HHHHHH', id, flags, questions, answers, authority, additional)
+    
+    # questiion
+    domain = encode_domain_name(domain_name)
+    q_type = 1
+    q_class = 1
+    question = domain + struct.pack('!HH', q_type, q_class)
+    
+    return header + question
+
+def getIpFromDNS(dns_server_port, dns_server_ip):
+    dns_server = socket(AF_INET, SOCK_STREAM)
+    dns_server.connect(('localhost', dns_server_port))
+    dns_server.sendall(construct_dns_request('video.cs.cmu.edu'))
+    response = dns_server.recv(514).decode('utf-8')
+    ip_address = parse_dns_response(response)
+    return ip_address
 
 def parse_bandwidths(server_message):
     bitrates = []
@@ -177,6 +224,7 @@ def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip):
             # Receive message from the client
             header, body = receiveMessageHeader(clientSocket)
             if not header:
+                print("Client header is 0")
                 # Client closed connection
                 closeConnections(clientSocket, serverSocket)
             
@@ -221,16 +269,22 @@ def handle_client(clientSocket, log_file, fake_ip, alpha, server_ip):
 
 if __name__ == "__main__":
     if len(sys.argv) != 7:
-        print("Usage: python3", sys.argv[0], "<topo_dir>", "<log>", "alpha", "<listen-port>", "<fake-ip>", "<dns-server-ip>")
+        print("Usage: python3", sys.argv[0], "<topo_dir>", "<log>", "alpha", "<listen-port>", "<fake-ip>", "<dns-server-port>")
         sys.exit()
         
     topo_dir = str(sys.argv[1])
     log_file = str(sys.argv[2])
     alpha = float(sys.argv[3])
     listen_port = int(sys.argv[4])    
-    fake_ip = '1.0.0.1'  
-    server_ip = "3.0.0.1"
-    print("topo_dir:", topo_dir, "log_file:", log_file, "alpha:", alpha, "listen_port:", listen_port, "fake_ip:", fake_ip, "dns_server_ip:", server_ip)
+    fake_ip = str(sys.argv[5])
+    dns_server_port = int(sys.argv[6])
+    print("topo_dir:", topo_dir, "log_file:", log_file, "alpha:", alpha, "listen_port:", listen_port, "fake_ip:", fake_ip, "dns_server_port:", server_ip)
+    
+    topo_dns_file = topo_dir + '/topo' + topo_dir[-1] + ".dns"
+    with open(topo_dns_file, "r") as file:
+        dns_server_ip = file.read().strip()
+        
+    server_ip = getIpFromDNS(dns_server_port, dns_server_ip)
 
     proxySocket = socket(AF_INET, SOCK_STREAM)
     proxySocket.bind(("", listen_port))
