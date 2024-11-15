@@ -279,7 +279,7 @@ if __name__ == "__main__":
     listen_port = int(sys.argv[4])    
     fake_ip = str(sys.argv[5])
     dns_server_port = int(sys.argv[6])
-    print("topo_dir:", topo_dir, "log_file:", log_file, "alpha:", alpha, "listen_port:", listen_port, "fake_ip:", fake_ip, "dns_server_port:", server_ip)
+    print("topo_dir:", topo_dir, "log_file:", log_file, "alpha:", alpha, "listen_port:", listen_port, "fake_ip:", fake_ip, "dns_server_port:", dns_server_port)
     
     topo_dns_file = topo_dir + '/topo' + topo_dir[-1] + ".dns"
     with open(topo_dns_file, "r") as file:
