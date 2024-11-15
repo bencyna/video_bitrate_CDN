@@ -17,6 +17,10 @@ def create_dns_response(data, ip_address):
     answers = b'\x00\x01'  
     authority = b'\x00\x00' 
     additional = b'\x00\x00' 
+    
+    print(domain_name)
+    # flags = flags[:1] + bytes([(flags[1] & 0xF0) | (rcode & 0x0F)])
+    
     header = id + flags + questions + answers + authority + additional
 
     domain = encode_domain_name(domain_name)
