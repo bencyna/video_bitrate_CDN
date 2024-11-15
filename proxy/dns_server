@@ -32,6 +32,7 @@ def create_dns_response(data, ip_address):
     authority = b'\x00\x00' 
     additional = b'\x00\x00' 
     
+    print(domain_name, "domain name")
     if domain_name != "video.columbia.edu":    
         return None
     
