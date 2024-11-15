@@ -7,8 +7,10 @@ import time
 import struct
 
 def parse_dns_response(data):
-    domain_start = 12 
+    domain_start = 12  
     domain_name = []
+
+    # Parse the domain name
     while True:
         length = data[domain_start]
         if length == 0: 
@@ -16,8 +18,24 @@ def parse_dns_response(data):
         domain_start += 1
         domain_name.append(data[domain_start:domain_start + length].decode('utf-8'))
         domain_start += length
-    print("paresed domain name: ", '.'.join(domain_name))
-    return '.'.join(domain_name)
+
+    domain_name_str = '.'.join(domain_name)
+
+    question_end = domain_start + 1 + 4  
+
+    answer_start = question_end
+
+    answer_start += 10
+
+    rdlength = int.from_bytes(data[answer_start:answer_start + 2], byteorder='big')
+    answer_start += 2
+
+    ip_address_bytes = data[answer_start:answer_start + rdlength]
+    ip_address = '.'.join(map(str, ip_address_bytes))  
+
+    print("Parsed IP address: ", ip_address)
+    return ip_address
+
 
 def encode_domain_name(domain_name):
     labels = domain_name.split('.')
