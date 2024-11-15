@@ -225,7 +225,8 @@ def connectToServer(fake_ip, dns_server_port, dns_server_ip):
     print("Connected to server")
     return serverSocket, server_ip
 
-def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip):
+# dns_server_port and ip are given here if I have time to implement period checking of dns server, unsued for now
+def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip, dns_server_port, dns_server_ip):
     try:
         # t_current = lowest av bitrate for client server pair
         throughput_count = 0
@@ -273,7 +274,7 @@ def handle_client(clientSocket, log_file, fake_ip, alpha, dns_server_port, dns_s
     try:
         serverSocket, server_ip = connectToServer(fake_ip, dns_server_port, dns_server_ip)
         bitrates = getBitrates(serverSocket)
-        runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, dns_server_port, dns_server_ip)
+        runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip, dns_server_port, dns_server_ip)
         
     except Exception as e:
         print(f"Error handling client: {e}")
