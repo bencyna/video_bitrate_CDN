@@ -232,12 +232,12 @@ def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip):
         bitrate = setBitrate(bitrates, t_current)
         while True:
             # Receive message from the client
-            header = None
-            while not header:
-                header, body = receiveMessageHeader(clientSocket)
+            header, body = receiveMessageHeader(clientSocket)
+            if not header:
                 print("Client header is 0")
-                # keep alive
-                            
+                # Client closed connection
+                closeConnections(clientSocket, serverSocket)
+            
             header = re.sub(r'1006743', f'{bitrate}', header)
 
             # Forward message to server
