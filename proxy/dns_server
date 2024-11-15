@@ -90,6 +90,7 @@ if __name__ == "__main__":
     
     with open(log_file, "w") as f:
         f.close()
+        
     with open(topo_dns_file, "r") as file:
         dns_ip_addr = file.read().strip()
         
@@ -114,6 +115,7 @@ if __name__ == "__main__":
                 i += 1
                 log(decision_method, ip_chosen)
                 server_socket.sendto(response, client_address)
+                print("sending ip address: ", ip_chosen)
             
     except KeyboardInterrupt:
         print("\nServer is shutting down.")
