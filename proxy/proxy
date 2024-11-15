@@ -45,7 +45,7 @@ def construct_dns_request(domain_name):
     return header + question
 
 def getIpFromDNS(dns_server_port, dns_server_ip):
-    dns_server = socket(AF_INET, SOCK_STREAM)
+    dns_server = socket(AF_INET, SOCK_DGRAM)
     print(dns_server_ip, dns_server_port)
     dns_server.connect((dns_server_ip, dns_server_port))
     dns_server.sendall(construct_dns_request('video.cs.cmu.edu'))
@@ -285,7 +285,8 @@ if __name__ == "__main__":
     topo_dns_file = topo_dir + '/topo' + topo_dir[-1] + ".dns"
     with open(topo_dns_file, "r") as file:
         dns_server_ip = file.read().strip()
-        
+    
+    print("about to call getIpFromDNS")
     server_ip = getIpFromDNS(dns_server_port, dns_server_ip)
     print("returned server ip:", server_ip)
     
