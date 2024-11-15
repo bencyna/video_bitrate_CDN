@@ -18,17 +18,20 @@ def create_dns_response(data, ip_address):
     additional = b'\x00\x00' 
     header = id + flags + questions + answers + authority + additional
     
-    domain = domain_name.encode('utf-8') + b'\x00'
+    domain = encode_domain_name(domain_name)
+
     
     q_type = b'\x00\x01'  
     q_class = b'\x00\x01'  
     ttl = b'\x00\x00\x00\x00'  # no caching
     length = b'\x00\x04'  
     addr = inet_aton(ip_address)
-    resource_section = q_type + q_class + ttl + length + addr
+    resource_section = ttl + length + addr
     
+    question_section = domain + q_type + q_class
+    response = header + question_section + resource_section
 
-    response = header + domain + resource_section
+    response = header + question_section + resource_section
     
     return response
     
@@ -41,6 +44,10 @@ def parse_dns_query(data):
     return domain_name
 
 
+def encode_domain_name(domain_name):
+    labels = domain_name.split('.')
+    encoded_name = b''.join(len(label).to_bytes(1, 'big') + label.encode() for label in labels)
+    return encoded_name + b'\x00'
 
 
 if __name__ == "__main__":
