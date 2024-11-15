@@ -251,8 +251,7 @@ def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip, d
             # Receive messages from server and forward to client
             server_message, server_header = receiveMessageServer(serverSocket)
             if len(server_message) < 2:
-                continue
-                # closeConnections(clientSocket, serverSocket)
+                closeConnections(clientSocket, serverSocket)
             
             # received messgae from server, calculate throughput
             downloadTimeEnd = time.time()
