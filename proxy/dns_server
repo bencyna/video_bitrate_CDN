@@ -8,96 +8,41 @@ import struct
 
 import struct
 
-def create_dns_response(query_data, ip_address="192.0.2.1"):
-    # Parse the transaction ID from the query (first 2 bytes)
-    transaction_id = query_data[:2]
+def create_dns_response(data, ip_address):
+    domain_name = parse_dns_query(data)
     
-    # Flags: Response (QR=1), Standard Query (OPCODE=0), No Error (RCODE=0)
-    flags = struct.pack("!H", 0x8180)  # 1000 0001 1000 0000 in binary
-
-    # Question Count (QDCOUNT) is 1
-    qdcount = struct.pack("!H", 1)
-
-    # Answer Count (ANCOUNT) is 1 (we're providing one answer)
-    ancount = struct.pack("!H", 1)
-
-    # NSCOUNT and ARCOUNT are 0 (no additional or authority records)
-    nscount = struct.pack("!H", 0)
-    arcount = struct.pack("!H", 0)
-
-    # DNS Header
-    header = transaction_id + flags + qdcount + ancount + nscount + arcount
-
-    # Question Section: Echo back the question section from the query
-    question_section = query_data[12:]  # Skipping the header (first 12 bytes)
-
-    # Answer Section
-    # Name: Pointer to the domain name in the question section (0xC00C means offset 12)
-    name = struct.pack("!H", 0xC00C)
-
-    # Type: A (IPv4 address)
-    type_ = struct.pack("!H", 1)
+    # Construct the response header
+    transaction_id = data[:2]
+    flags = b'\x81\x80'  # Response, no error (AA=0, RD=0, RA=0, Z=0)
+    questions = b'\x00\x01'  # 1 question
+    answers = b'\x00\x01'  # 1 answer
+    authority = b'\x00\x00'  # 0 authority records
+    additional = b'\x00\x00'  # 0 additional records
+    header = transaction_id + flags + questions + answers + authority + additional
     
-    # Class: IN (Internet)
-    class_ = struct.pack("!H", 1)
+    # Construct the domain name section
+    domain_section = domain_name.encode('utf-8') + b'\x00'
     
-    # TTL: 300 seconds (5 minutes)
-    ttl = struct.pack("!I", 300)
+    # Construct the resource record section
+    resource_type = b'\x00\x01'  # Type A (IPv4 address)
+    resource_class = b'\x00\x01'  # Class IN (Internet)
+    resource_ttl = b'\x00\x00\x00\x00'  # Time to live (0 seconds, no caching)
+    resource_length = b'\x00\x04'  # Length of the IPv4 address (4 bytes)
+    resource_address = inet_aton(ip_address)
+    resource_section = resource_type + resource_class + resource_ttl + resource_length + resource_address
     
-    # Data length: 4 bytes (IPv4 address)
-    data_len = struct.pack("!H", 4)
+    # Combine the header, domain, and resource sections
+    response = header + domain_section + resource_section
     
-    # Hardcoded IP Address (e.g., "192.0.2.1")
-    ip_parts = map(int, ip_address.split("."))
-    ip_bytes = struct.pack("!4B", *ip_parts)
-
-    # Combine all parts to form the answer section
-    answer_section = name + type_ + class_ + ttl + data_len + ip_bytes
-
-    # Combine header, question section, and answer section
-    response = header + question_section + answer_section
-
     return response
 
-
 def parse_dns_query(data):
-    # DNS Header is the first 12 bytes
-    transaction_id, flags, qdcount, ancount, nscount, arcount = struct.unpack("!6H", data[:12])
+    domain_start = 12
+    domain_end = data.find(b'\x00', domain_start)
+    domain_name = data[domain_start:domain_end].decode('utf-8')
+    
+    return domain_name
 
-    # Print the header info
-    print(f"Transaction ID: {transaction_id}")
-    print(f"Flags: {flags}")
-    print(f"Questions: {qdcount}, Answer RRs: {ancount}, Authority RRs: {nscount}, Additional RRs: {arcount}")
-
-    # Parsing the Question Section
-    question_offset = 12
-    domain_name = []
-    while True:
-        length = data[question_offset]
-        if length == 0:
-            question_offset += 1
-            break
-        domain_name.append(data[question_offset + 1: question_offset + 1 + length].decode())
-        question_offset += length + 1
-
-    domain_name = ".".join(domain_name)
-    print(f"Domain Name: {domain_name}")
-
-    # Extract query type and class (next 4 bytes after domain name)
-    qtype, qclass = struct.unpack("!2H", data[question_offset:question_offset + 4])
-    print(f"Query Type: {qtype}, Query Class: {qclass}")
-
-    return {
-        "transaction_id": transaction_id,
-        "flags": flags,
-        "qdcount": qdcount,
-        "ancount": ancount,
-        "nscount": nscount,
-        "arcount": arcount,
-        "domain_name": domain_name,
-        "query_type": qtype,
-        "query_class": qclass
-    }
 
 
 
@@ -130,8 +75,7 @@ if __name__ == "__main__":
         while True:
             data, client_address = server_socket.recvfrom(512)
             print(f"Received message from {client_address}: {data}")
-            parse_dns_query(data)
-            response = create_dns_response(data, ip_address=server_ip_responses[0])
+            response = parse_dns_query(data)
             server_socket.sendto(response, client_address)
             
     except KeyboardInterrupt:
