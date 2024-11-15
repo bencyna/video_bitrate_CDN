@@ -229,54 +229,60 @@ def connectToServer(fake_ip, dns_server_port, dns_server_ip):
 # dns_server_port and ip are given here if I have time to implement period checking of dns server, unsued for now
 def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip, dns_server_port, dns_server_ip):
     try:
-        # t_current = lowest av bitrate for client server pair
         throughput_count = 0
         throughput_total = 0
-        t_current = 0 # intialise this to be the lowest possible bitrate for the pair
+        t_current = 0
         bitrate = setBitrate(bitrates, t_current)
+        
         while True:
-            # Receive message from the client
+            # Only receive the next client message after handling the previous complete request-response cycle
             header, body = receiveMessageHeader(clientSocket)
             if not header:
                 print("Client header is 0")
-                # Client closed connection
                 closeConnections(clientSocket, serverSocket)
+                return
             
             header = re.sub(r'1006743', f'{bitrate}', header)
             print("client header", header)
-            # Forward message to server
+            
+            # Forward message to server and wait for complete response
             downloadTimeStart = time.time()
             sendMessage(header, serverSocket)
-        
-            # Receive messages from server and forward to client
+            
+            # Wait for and process server response completely before accepting next client message
             server_message, server_header = receiveMessageServer(serverSocket)
             print("server header", server_header)
             if len(server_message) < 2:
                 closeConnections(clientSocket, serverSocket)
                 return 
             
-            # received messgae from server, calculate throughput
+            # Calculate throughput after complete response
             downloadTimeEnd = time.time()
             t_current = getThroughput(downloadTimeEnd, downloadTimeStart, server_message, t_current, alpha)
             throughput_total += t_current
             throughput_count += 1
             
             print(f"Throughput: {t_current} bits/sec")
-                
+            
+            # Update bitrate and forward response to client
             bitrate = setBitrate(bitrates, t_current)
-            # foward the message to the client
             sendMessage(server_message, clientSocket)
-            logContents(header, server_header, log_file, downloadTimeStart, t_current, throughput_total / throughput_count, bitrate, server_ip)
+            
+            # Log after complete cycle
+            logContents(header, server_header, log_file, downloadTimeStart, t_current, 
+                       throughput_total / throughput_count, bitrate, server_ip)
+            
+            # Now the cycle is complete and we can process the next message
             
     except Exception as e:
         print(f"Error in proxy: {e}")
         tb = traceback.extract_tb(e.__traceback__)
-          # Extract the line number from the last frame in the traceback
         line_number = tb[-1].lineno
         print(f"An error occurred on line {line_number}: {e}")
     finally:
         closeConnections(clientSocket, serverSocket)
-
+        
+        
 def handle_client(clientSocket, log_file, fake_ip, alpha, dns_server_port, dns_server_ip):
     try:
         serverSocket, server_ip = connectToServer(fake_ip, dns_server_port, dns_server_ip)
