@@ -10,8 +10,31 @@ import struct
 
 def create_dns_response(data, ip_address):
     domain_name = parse_dns_query(data)
-    print(domain_name)
     
+    # Construct the response header
+    transaction_id = data[:2]
+    flags = b'\x81\x80'  # Response, no error (AA=0, RD=0, RA=0, Z=0)
+    questions = b'\x00\x01'  # 1 question
+    answers = b'\x00\x01'  # 1 answer
+    authority = b'\x00\x00'  # 0 authority records
+    additional = b'\x00\x00'  # 0 additional records
+    header = transaction_id + flags + questions + answers + authority + additional
+    
+    # Construct the domain name section
+    domain_section = domain_name.encode('utf-8') + b'\x00'
+    
+    # Construct the resource record section
+    resource_type = b'\x00\x01'  # Type A (IPv4 address)
+    resource_class = b'\x00\x01'  # Class IN (Internet)
+    resource_ttl = b'\x00\x00\x00\x00'  # Time to live (0 seconds, no caching)
+    resource_length = b'\x00\x04'  # Length of the IPv4 address (4 bytes)
+    resource_address = inet_aton(ip_address)
+    resource_section = resource_type + resource_class + resource_ttl + resource_length + resource_address
+    
+    # Combine the header, domain, and resource sections
+    response = header + domain_section + resource_section
+    
+    return response
 
 def parse_dns_query(data):
     domain_start = 12
@@ -52,7 +75,7 @@ if __name__ == "__main__":
         while True:
             data, client_address = server_socket.recvfrom(512)
             print(f"Received message from {client_address}: {data}")
-            response = parse_dns_query(data)
+            response = create_dns_response(data)
             server_socket.sendto(response.encode("utf-8"), client_address)
             
     except KeyboardInterrupt:
