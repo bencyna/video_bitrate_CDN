@@ -82,7 +82,7 @@ if __name__ == "__main__":
     server_socket = socket(AF_INET, SOCK_DGRAM)
     server_socket.bind((dns_ip_addr, listen_port))
     
-    
+    print("server ip address 1: ", server_ip_responses[0])
     
     try:
         while True:
