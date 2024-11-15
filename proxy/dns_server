@@ -20,14 +20,14 @@ def create_dns_response(data, ip_address):
     
     domain = domain_name.encode('utf-8') + b'\x00'
     
-    resource_type = b'\x00\x01'  
-    resource_class = b'\x00\x01'  
-    resource_ttl = b'\x00\x00\x00\x00'  
-    resource_length = b'\x00\x04'  
-    resource_address = inet_aton(ip_address)
-    resource_section = resource_type + resource_class + resource_ttl + resource_length + resource_address
+    q_type = b'\x00\x01'  
+    q_class = b'\x00\x01'  
+    ttl = b'\x00\x00\x00\x00'  # no caching
+    length = b'\x00\x04'  
+    addr = inet_aton(ip_address)
+    resource_section = q_type + q_class + ttl + length + addr
     
-    
+
     response = header + domain + resource_section
     
     return response
