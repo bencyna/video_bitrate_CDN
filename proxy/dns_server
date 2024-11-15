@@ -8,41 +8,39 @@ import struct
 
 import struct
 
+# Resources used for this https://implement-dns.wizardzines.com/book/part_2, https://www.youtube.com/watch?v=zDvPT1shDFg and https://mislove.org/teaching/cs4700/spring11/handouts/project1-primer.pdf
 def create_dns_response(data, ip_address):
-   # Parse the domain name from the query
     domain_name = parse_dns_query(data)
-    id = data[:2]  # Transaction ID
-    flags = b'\x81\x80'  # Standard response with no errors
-    questions = b'\x00\x01'  # One question
-    answers = b'\x00\x01'  # One answer
-    authority = b'\x00\x00'  # No authority records
-    additional = b'\x00\x00'  # No additional records
+    id = data[:2]  
+    flags = b'\x81\x80' 
+    questions = b'\x00\x01'  
+    answers = b'\x00\x01'  
+    authority = b'\x00\x00' 
+    additional = b'\x00\x00' 
     header = id + flags + questions + answers + authority + additional
 
-    # Encode domain name for question section
     domain = encode_domain_name(domain_name)
-    q_type = b'\x00\x01'  # Type A (host address)
-    q_class = b'\x00\x01'  # Class IN (internet)
+    q_type = b'\x00\x01' 
+    q_class = b'\x00\x01' 
     question_section = domain + q_type + q_class
 
-    # Answer section
-    answer_name = b'\xc0\x0c'  # Pointer to domain name in the question section
-    ttl = struct.pack('!I', 300)  # TTL set to 300 seconds
-    length = b'\x00\x04'  # IPv4 address length
-    addr = inet_aton(ip_address)  # Convert IP address to binary
+    answer_name = b'\xc0\x0c'  
+    ttl = struct.pack('!I', 0)  
+    length = b'\x00\x04' 
+    addr = inet_aton(ip_address) 
     answer_section = answer_name + q_type + q_class + ttl + length + addr
 
-    # Combine all parts into the final response
+
     response = header + question_section + answer_section
 
     return response
 
 def parse_dns_query(data):
-    domain_start = 12  # Queries start after the 12-byte header
+    domain_start = 12 
     domain_name = []
     while True:
         length = data[domain_start]
-        if length == 0:  # End of domain name
+        if length == 0: 
             break
         domain_start += 1
         domain_name.append(data[domain_start:domain_start + length].decode('utf-8'))
@@ -54,7 +52,7 @@ def encode_domain_name(domain_name):
     encoded_name = b''
     for label in labels:
         encoded_name += bytes([len(label)]) + label.encode('utf-8')
-    return encoded_name + b'\x00'  # Null byte to terminate
+    return encoded_name + b'\x00' 
 
 
 
