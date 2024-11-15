@@ -5,6 +5,25 @@ import sys
 from socket import *
 import time
 
+def getBestLatency(server_ip_responses):
+    min_latency = float('inf')
+    best_ip = None
+    for ip in server_ip_responses:
+        try:
+            client_socket = socket(AF_INET, SOCK_STREAM)
+            client_socket.settimeout(1)
+            start_time = time.time()
+            client_socket.connect((ip, 80))
+            end_time = time.time()
+            latency = end_time - start_time
+            if latency < min_latency:
+                min_latency = latency
+                best_ip = ip
+            client_socket.close()
+        except Exception as e:
+            print("Error getting latency:", e)
+    return best_ip
+
 def log(decision_method, ip_chosen):
     try:
         current_time = time.time()
@@ -20,7 +39,7 @@ def getIP(server_ip_responses, decision_method, i):
         return server_ip_responses[i % len(server_ip_responses)]
     else:
       # decision is based on fasts response time?
-        return server_ip_responses[0]
+        return getBestLatency(server_ip_responses)
       
 # Resources used for this https://implement-dns.wizardzines.com/book/part_2, https://www.youtube.com/watch?v=zDvPT1shDFg and https://mislove.org/teaching/cs4700/spring11/handouts/project1-primer.pdf
 def create_dns_response(data, ip_address):
