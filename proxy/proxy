@@ -229,7 +229,6 @@ def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip, d
             # Receive message from the client
             header, body = receiveMessageHeader(clientSocket)
             if not header:
-                print("Client header is 0")
                 # Don't close connections immediately if header is empty
                 continue
             
