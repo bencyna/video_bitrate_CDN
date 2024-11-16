@@ -218,8 +218,7 @@ def receiveMessageServer(socket):
     return full_response, response
 
 def connectToServer(fake_ip, dns_server_port, dns_server_ip):
-    # server_ip = getIpFromDNS(dns_server_port, dns_server_ip)
-    server_ip = "3.0.0.1"
+    server_ip = getIpFromDNS(dns_server_port, dns_server_ip)
     serverSocket = socket(AF_INET, SOCK_STREAM)
     serverSocket.bind((fake_ip, 0))
     serverSocket.connect((server_ip, 80))
