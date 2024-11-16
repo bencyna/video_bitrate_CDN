@@ -158,7 +158,6 @@ def sendMessage(message, socket):
     socket.sendall(message)
 
 def receiveMessageHeader(socket):
-    # use a bytearray to store the encoded message
     buffer = bytearray()
     while True:
         chunk = socket.recv(1024)
@@ -169,12 +168,10 @@ def receiveMessageHeader(socket):
         if b'\r\n\r\n' in buffer:
             break
     
-    # get the first occurance of the header end and include that in our header message
     header_end = buffer.find(b'\r\n\r\n') + 4
     headers = buffer[:header_end]
     remaining_body = buffer[header_end:]
     
-    # decode the headers
     headers_str = headers.decode('iso-8859-1')
             
     return headers_str, remaining_body
@@ -201,7 +198,7 @@ def receiveMessageServer(socket):
     content_length = getContentLength(headers_str)
     
     if content_length is not None:
-        # Keep receiving until we get the full content length
+        # keep recving til we get the full content length
         remaining = content_length - len(initial_body)
         while remaining > 0:
             chunk = socket.recv(min(remaining, 8192))
@@ -231,29 +228,24 @@ def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip, d
         # t_current = lowest av bitrate for client server pair
         throughput_count = 0
         throughput_total = 0
-        t_current = 0 # intialise this to be the lowest possible bitrate for the pair
+        t_current = 0 #
         bitrate = setBitrate(bitrates, t_current)
         while True:
-            # Receive message from the client
             header, body = receiveMessageHeader(clientSocket)
             if not header:
                 print("Client header is 0")
-                # Client closed connection
                 closeConnections(clientSocket, serverSocket)
                 return 
             
             header = re.sub(r'1006743', f'{bitrate}', header)
-            # Forward message to server
             downloadTimeStart = time.time()
             sendMessage(header, serverSocket)
         
-            # Receive messages from server and forward to client
             server_message, server_header = receiveMessageServer(serverSocket)
             if len(server_message) < 2:
                 closeConnections(clientSocket, serverSocket)
                 return 
             
-            # received messgae from server, calculate throughput
             downloadTimeEnd = time.time()
             t_current = getThroughput(downloadTimeEnd, downloadTimeStart, server_message, t_current, alpha)
             throughput_total += t_current
@@ -262,7 +254,6 @@ def runProxy(clientSocket, serverSocket, log_file, alpha, bitrates, server_ip, d
             print(f"Throughput: {t_current} bits/sec")
                 
             bitrate = setBitrate(bitrates, t_current)
-            # foward the message to the client
             sendMessage(server_message, clientSocket)
             logContents(header, server_header, log_file, downloadTimeStart, t_current, throughput_total / throughput_count, bitrate, server_ip)
             
