@@ -219,11 +219,11 @@ def receiveMessageServer(socket):
 
 def connectToServer(fake_ip, dns_server_port, dns_server_ip):
     server_ip = getIpFromDNS(dns_server_port, dns_server_ip)
+    server_ip = "3.0.0.1"
     serverSocket = socket(AF_INET, SOCK_STREAM)
     serverSocket.bind((fake_ip, 0))
     serverSocket.connect((server_ip, 80))
     print("Connected to server")
-    server_ip = "3.0.0.1"
     return serverSocket, server_ip
 
 # dns_server_port and ip are given here if I have time to implement period checking of dns server, unsued for now
